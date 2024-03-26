@@ -1,6 +1,8 @@
 #include <deal.II/base/function.h>
 #include <deal.II/base/function_lib.h>
+#include <deal.II/base/function_parser.h>
 #include <deal.II/base/logstream.h>
+#include <deal.II/base/parameter_handler.h>
 #include <deal.II/base/quadrature_lib.h>
 
 #include <deal.II/dofs/dof_handler.h>
@@ -31,8 +33,46 @@ using namespace dealii;
 template <int dim>
 struct PoissonParameters
 {
-  unsigned int fe_degree     = 1;
-  unsigned int n_refinements = 3;
+  PoissonParameters()
+  {
+    prm.enter_subsection("Poisson parameters");
+    {
+      prm.add_parameter("Finite element degree", fe_degree);
+      prm.add_parameter("Initial refinement", initial_refinement);
+      prm.add_parameter("Number of cycle", n_cycles);
+      prm.add_parameter("Exact solution expression", exact_solution_expression);
+      prm.add_parameter("Right hand side expression", rhs_expression);
+    }
+    prm.leave_subsection();
+
+    try
+      {
+        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
+      }
+    catch (std::exception &exc)
+      {
+        prm.print_parameters("poisson_" + std::to_string(dim) + "d.prm");
+        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
+      }
+    std::map<std::string, double> constants;
+    constants["pi"] = numbers::PI;
+    exact_solution.initialize(FunctionParser<dim>::default_variable_names(),
+                              {exact_solution_expression},
+                              constants);
+    rhs_function.initialize(FunctionParser<dim>::default_variable_names(),
+                            {rhs_expression},
+                            constants);
+  }
+  unsigned int fe_degree                 = 1;
+  unsigned int initial_refinement        = 3;
+  unsigned int n_cycles                  = 1;
+  std::string  exact_solution_expression = "cos(pi*x)*cos(pi*y)";
+  std::string  rhs_expression            = "2*pi*pi*cos(pi*x)*cos(pi*y)";
+
+  FunctionParser<dim> exact_solution;
+  FunctionParser<dim> rhs_function;
+
+  ParameterHandler prm;
 };
 
 
@@ -86,7 +126,7 @@ void
 Poisson<dim>::make_grid()
 {
   GridGenerator::hyper_cube(triangulation, -1, 1);
-  triangulation.refine_global(4);
+  triangulation.refine_global(par.initial_refinement);
 
   std::cout << "   Number of active cells: " << triangulation.n_active_cells()
             << std::endl
@@ -122,8 +162,6 @@ Poisson<dim>::assemble_system()
 {
   QGauss<dim> quadrature_formula(fe.degree + 1);
 
-  Functions::CosineFunction<dim> right_hand_side;
-
   FEValues<dim> fe_values(fe,
                           quadrature_formula,
                           update_values | update_gradients |
@@ -153,7 +191,7 @@ Poisson<dim>::assemble_system()
 
             const auto &x_q = fe_values.quadrature_point(q_index);
             cell_rhs(i) += (fe_values.shape_value(i, q_index) * // phi_i(x_q)
-                            right_hand_side.value(x_q) *        // f(x_q)
+                            par.rhs_function.value(x_q) *       // f(x_q)
                             fe_values.JxW(q_index));            // dx
           }
 
@@ -172,7 +210,7 @@ Poisson<dim>::assemble_system()
   std::map<types::global_dof_index, double> boundary_values;
   VectorTools::interpolate_boundary_values(dof_handler,
                                            0,
-                                           Functions::CosineFunction<dim>(),
+                                           par.exact_solution,
                                            boundary_values);
   MatrixTools::apply_boundary_values(boundary_values,
                                      system_matrix,
@@ -207,8 +245,8 @@ Poisson<dim>::output_results() const
 
   data_out.build_patches();
 
-  std::ofstream output(dim == 2 ? "solution-2d.vtk" : "solution-3d.vtk");
-  data_out.write_vtk(output);
+  std::ofstream output(dim == 2 ? "solution-2d.vtu" : "solution-3d.vtu");
+  data_out.write_vtu(output);
 }
 
 

@@ -16,6 +16,7 @@
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/vector_tools.h>
 
+#include <fstream>
 #include <iostream>
 
 using namespace dealii;
@@ -45,7 +46,7 @@ main()
   Triangulation<2> triangulation;
   FE_Q<2>          fe(2);
   DoFHandler<2>    dof_handler(triangulation);
-  GridGenerator::hyper_cube(triangulation);
+  GridGenerator::hyper_cube(triangulation, -2, 2);
   triangulation.refine_global(3);
 
   dof_handler.distribute_dofs(fe);
