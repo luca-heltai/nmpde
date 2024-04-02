@@ -44,11 +44,7 @@
 
 5. Consider the case of the `hyper_L`, in dimension 2, with the re-entrant
    corner centered on the origin. Construct a manufactured solution that would
-   read in radial coordinates as
-
-   $$
-   u(r,\theta) = r^\frac{\pi}{\omega}\sin(\frac{\pi}{\omega}(\theta - (2\pi-\omega)))
-   $$
+   read in radial coordinates as    $$ u(r,\theta) = r^\frac{\pi}{\omega}\sin(\frac{\pi}{\omega}(\theta - (2\pi-\omega))) $$
 
    and choose $\omega$ so that the solution is zero on both sides adjacent to the  re-entrant corner.
 
