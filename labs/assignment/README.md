@@ -46,7 +46,9 @@
    corner centered on the origin. Construct a manufactured solution that would
    read in radial coordinates as
 
-   $$ u(r,\theta) = r^\frac{\pi}{\omega}\sin(\frac{\pi}{\omega}(\theta - (2\pi-\omega)) $$
+   $$
+   u(r,\theta) = r^\frac{\pi}{\omega}\sin(\frac{\pi}{\omega}(\theta - (2\pi-\omega)))
+   $$
 
    and choose $\omega$ so that the solution is zero on both sides adjacent to the  re-entrant corner.
 
