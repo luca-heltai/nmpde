@@ -15,6 +15,7 @@
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/tria.h>
 
+#include <deal.II/lac/affine_constraints.h>
 #include <deal.II/lac/dynamic_sparsity_pattern.h>
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/precondition.h>
@@ -110,6 +111,8 @@ private:
   FE_Q<dim>          fe;
   DoFHandler<dim>    dof_handler;
 
+  AffineConstraints<double> constraints;
+
   SparsityPattern      sparsity_pattern;
   SparseMatrix<double> system_matrix;
 
@@ -151,8 +154,18 @@ Poisson<dim>::setup_system()
   std::cout << "   Number of degrees of freedom: " << dof_handler.n_dofs()
             << std::endl;
 
+  constraints.clear();
+  VectorTools::interpolate_boundary_values(dof_handler,
+                                           0,
+                                           par.exact_solution,
+                                           constraints);
+
+  // Create hanging node constraints
+  DoFTools::make_hanging_node_constraints(dof_handler, constraints);
+  constraints.close();
+
   DynamicSparsityPattern dsp(dof_handler.n_dofs());
-  DoFTools::make_sparsity_pattern(dof_handler, dsp);
+  DoFTools::make_sparsity_pattern(dof_handler, dsp, constraints);
   sparsity_pattern.copy_from(dsp);
 
   system_matrix.reinit(sparsity_pattern);
@@ -203,26 +216,28 @@ Poisson<dim>::assemble_system()
           }
 
       cell->get_dof_indices(local_dof_indices);
-      for (const unsigned int i : fe_values.dof_indices())
-        {
-          for (const unsigned int j : fe_values.dof_indices())
-            system_matrix.add(local_dof_indices[i],
-                              local_dof_indices[j],
-                              cell_matrix(i, j));
+      constraints.distribute_local_to_global(
+        cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
+      // for (const unsigned int i : fe_values.dof_indices())
+      //   {
+      //     for (const unsigned int j : fe_values.dof_indices())
+      //       system_matrix.add(local_dof_indices[i],
+      //                         local_dof_indices[j],
+      //                         cell_matrix(i, j));
 
-          system_rhs(local_dof_indices[i]) += cell_rhs(i);
-        }
+      //     system_rhs(local_dof_indices[i]) += cell_rhs(i);
+      //   }
     }
 
-  std::map<types::global_dof_index, double> boundary_values;
-  VectorTools::interpolate_boundary_values(dof_handler,
-                                           0,
-                                           par.exact_solution,
-                                           boundary_values);
-  MatrixTools::apply_boundary_values(boundary_values,
-                                     system_matrix,
-                                     solution,
-                                     system_rhs);
+  // std::map<types::global_dof_index, double> boundary_values;
+  // VectorTools::interpolate_boundary_values(dof_handler,
+  //                                          0,
+  //                                          par.exact_solution,
+  //                                          boundary_values);
+  // MatrixTools::apply_boundary_values(boundary_values,
+  //                                    system_matrix,
+  //                                    solution,
+  //                                    system_rhs);
 }
 
 
@@ -234,6 +249,7 @@ Poisson<dim>::solve()
   SolverControl            solver_control(1000, 1e-12);
   SolverCG<Vector<double>> solver(solver_control);
   solver.solve(system_matrix, solution, system_rhs, PreconditionIdentity());
+  constraints.distribute(solution);
 
   std::cout << "   " << solver_control.last_step()
             << " CG iterations needed to obtain convergence." << std::endl;
@@ -280,7 +296,16 @@ Poisson<dim>::run()
       if (cycle == 0)
         make_grid();
       else
-        triangulation.refine_global(1);
+        {
+          // estimate error
+          // refine mesh where error is larger
+          for (const auto &cell : triangulation.active_cell_iterators())
+            {
+              if (cell->center().distance(Point<dim>(0.5, 0.5)) < 0.25)
+                cell->set_refine_flag();
+            }
+          triangulation.execute_coarsening_and_refinement();
+        }
       setup_system();
       assemble_system();
       solve();
