@@ -10,6 +10,7 @@
 #include <deal.II/dofs/dof_tools.h>
 
 #include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 
 #include <deal.II/grid/grid_generator.h>
@@ -38,6 +39,7 @@ struct LinearElasticityParameters
   LinearElasticityParameters()
     : exact_solution(dim)
     , rhs_function(dim)
+    , convergence_table({"u", "u"})
   {
     prm.enter_subsection("LinearElasticity parameters");
     {
@@ -46,6 +48,8 @@ struct LinearElasticityParameters
       prm.add_parameter("Number of cycles", n_cycles);
       prm.add_parameter("Exact solution expression", exact_solution_expression);
       prm.add_parameter("Right hand side expression", rhs_expression);
+      prm.add_parameter("Lame coefficient mu", mu);
+      prm.add_parameter("Lame coefficient lambda", lambda);
     }
     prm.leave_subsection();
 
@@ -75,8 +79,10 @@ struct LinearElasticityParameters
   unsigned int fe_degree                 = 1;
   unsigned int initial_refinement        = 3;
   unsigned int n_cycles                  = 1;
-  std::string  exact_solution_expression = "cos(pi*x)*cos(pi*y)";
-  std::string  rhs_expression            = "2*pi*pi*cos(pi*x)*cos(pi*y)";
+  std::string  exact_solution_expression = "0; 0";
+  std::string  rhs_expression            = "0; 0";
+  double       mu                        = 1.0;
+  double       lambda                    = 1.0;
 
   FunctionParser<dim> exact_solution;
   FunctionParser<dim> rhs_function;
@@ -111,7 +117,7 @@ private:
   const LinearElasticityParameters<dim> &par;
 
   Triangulation<dim> triangulation;
-  FE_Q<dim>          fe;
+  FESystem<dim>      fe;
   DoFHandler<dim>    dof_handler;
 
   AffineConstraints<double> constraints;
@@ -129,7 +135,7 @@ template <int dim>
 LinearElasticity<dim>::LinearElasticity(
   const LinearElasticityParameters<dim> &par)
   : par(par)
-  , fe(par.fe_degree)
+  , fe(FE_Q<dim>(par.fe_degree), dim)
   , dof_handler(triangulation)
 {}
 
@@ -139,7 +145,7 @@ template <int dim>
 void
 LinearElasticity<dim>::make_grid()
 {
-  GridGenerator::hyper_cube(triangulation, -1, 1);
+  GridGenerator::hyper_cube(triangulation, -1, 1, true);
   triangulation.refine_global(par.initial_refinement);
 
   std::cout << "   Number of active cells: " << triangulation.n_active_cells()
@@ -161,6 +167,11 @@ LinearElasticity<dim>::setup_system()
   constraints.clear();
   VectorTools::interpolate_boundary_values(dof_handler,
                                            0,
+                                           par.exact_solution,
+                                           constraints);
+
+  VectorTools::interpolate_boundary_values(dof_handler,
+                                           1,
                                            par.exact_solution,
                                            constraints);
 
@@ -198,6 +209,8 @@ LinearElasticity<dim>::assemble_system()
 
   std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
 
+  FEValuesExtractors::Vector displacements(0);
+
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
       fe_values.reinit(cell);
@@ -207,16 +220,31 @@ LinearElasticity<dim>::assemble_system()
       for (const unsigned int q_index : fe_values.quadrature_point_indices())
         for (const unsigned int i : fe_values.dof_indices())
           {
-            for (const unsigned int j : fe_values.dof_indices())
-              cell_matrix(i, j) +=
-                (fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
-                 fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
-                 fe_values.JxW(q_index));           // dx
+            const auto &phi_i = fe_values[displacements].value(i, q_index);
+            const auto &div_phi_i =
+              fe_values[displacements].divergence(i, q_index);
+            const auto &eps_phi_i =
+              fe_values[displacements].symmetric_gradient(i, q_index);
 
-            const auto &x_q = fe_values.quadrature_point(q_index);
-            cell_rhs(i) += (fe_values.shape_value(i, q_index) * // phi_i(x_q)
-                            par.rhs_function.value(x_q) *       // f(x_q)
-                            fe_values.JxW(q_index));            // dx
+            for (const unsigned int j : fe_values.dof_indices())
+              {
+                const auto &div_phi_j =
+                  fe_values[displacements].divergence(j, q_index);
+                const auto &eps_phi_j =
+                  fe_values[displacements].symmetric_gradient(j, q_index);
+
+                cell_matrix(i, j) +=
+                  (par.mu * scalar_product(eps_phi_i, eps_phi_j) +
+                   par.lambda * div_phi_i * div_phi_j) *
+                  fe_values.JxW(q_index); // dx
+              }
+
+            const auto &x_q    = fe_values.quadrature_point(q_index);
+            const auto  comp_i = fe.system_to_component_index(i).first;
+
+            cell_rhs(i) += (phi_i[comp_i] *                       // phi_i(x_q)
+                            par.rhs_function.value(x_q, comp_i) * // f(x_q)
+                            fe_values.JxW(q_index));              // dx
           }
 
       cell->get_dof_indices(local_dof_indices);
@@ -265,10 +293,17 @@ template <int dim>
 void
 LinearElasticity<dim>::output_results(const unsigned int cycle) const
 {
-  DataOut<dim> data_out;
+  DataOut<dim>             data_out;
+  std::vector<std::string> names(dim, "displacement");
+  const std::vector<DataComponentInterpretation::DataComponentInterpretation>
+    data_component_interpretation(
+      dim, DataComponentInterpretation::component_is_part_of_vector);
 
   data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(solution, "solution");
+  data_out.add_data_vector(solution,
+                           names,
+                           DataOut<dim>::type_dof_data,
+                           data_component_interpretation);
 
   data_out.build_patches();
 
