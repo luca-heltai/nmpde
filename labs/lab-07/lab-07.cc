@@ -32,6 +32,16 @@
 #include <fstream>
 #include <iostream>
 
+/**
+ * Exercise: Use mesh_loop to assemble the error estimator we defined in class:
+ *
+ * \eta_T = h_T || f + \Delta u_h ||_{L^2(T)} + sum_{F \in \partial T} h_F^{1/2}
+ * || [\grad u_h] ||_{L^2(F)}
+ *
+ * Take inspiration from "experiments.cc"
+ */
+
+
 using namespace dealii;
 
 template <int dim>
@@ -165,6 +175,7 @@ template <int dim>
 void
 Poisson<dim>::estimate()
 {
+  // Substitute this call with your own implementation of the error estimator
   KellyErrorEstimator<dim>::estimate(dof_handler,
                                      QGauss<dim - 1>(fe.degree + 1),
                                      {},
