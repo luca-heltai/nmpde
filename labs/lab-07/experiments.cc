@@ -54,7 +54,7 @@ main()
   DoFHandler<2> dof_handler(tria);
   dof_handler.distribute_dofs(fe);
 
-  FunctionParser<2> my_function("abs(x-1)", "", "x,y");
+  FunctionParser<2> my_function("2*abs(x-1)", "", "x,y");
 
   Vector<double> solution(dof_handler.n_dofs());
   VectorTools::interpolate(dof_handler, my_function, solution);
