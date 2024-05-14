@@ -17,31 +17,49 @@ using namespace dealii;
 int
 main()
 {
-  // Create the center of a circle
-  Point<2>         center;
-  double           inner_radius = 1.0;
-  double           outer_radius = 2.0;
-  Triangulation<2> triangulation;
-  FE_Q<2>          fe(2);
-  DoFHandler<2>    dof_handler(triangulation);
+  // Define the center of the circle
+  Point<2> center;
 
+  // Define inner and outer radii of the hyper shell
+  double inner_radius = 1.0;
+  double outer_radius = 2.0;
+
+  // Create a 2D triangulation object
+  Triangulation<2> triangulation;
+
+  // Define a finite element space with polynomial degree 2
+  FE_Q<2> fe(2);
+
+  // Set up the DoF handler with the triangulation
+  DoFHandler<2> dof_handler(triangulation);
+
+  // Generate a hyper shell mesh (annulus) with specified radii
   GridGenerator::hyper_shell(triangulation, center, inner_radius, outer_radius);
 
+  // Refine the mesh globally (optional, uncomment this if needed)
   // triangulation.refine_global();
 
-  // See step-2/step-3
+  // Distribute degrees of freedom among the cells (see step-2/step-3 tutorials
+  // for more details)
   dof_handler.distribute_dofs(fe);
 
+  // Output the number of active cells and total cells in the triangulation
   std::cout << "Number of active cells: " << triangulation.n_active_cells()
             << std::endl
             << "Total number of cells: " << triangulation.n_cells()
             << std::endl;
 
+  // Output the number of degrees of freedom
   std::cout << "Number of degrees of freedom: " << dof_handler.n_dofs()
             << std::endl;
+
+  // Create a GridOut object to write the grid to a file
   GridOut grid_out;
 
-  std::string   filename = "grid-1.svg";
+  // Define the output file name
+  std::string filename = "grid-1.svg";
+
+  // Create an output file stream and write the grid to the file in SVG format
   std::ofstream out(filename);
   grid_out.write_svg(triangulation, out);
 }
