@@ -14,6 +14,7 @@
 #include <deal.II/fe/fe_values.h>
 
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_refinement.h>
 #include <deal.II/grid/tria.h>
 
 #include <deal.II/lac/affine_constraints.h>
@@ -25,6 +26,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
@@ -39,6 +41,7 @@ struct LinearElasticityParameters
   LinearElasticityParameters()
     : exact_solution(dim)
     , rhs_function(dim)
+    , neumann_function(dim)
     , convergence_table({"u", "u"})
   {
     prm.enter_subsection("LinearElasticity parameters");
@@ -47,9 +50,14 @@ struct LinearElasticityParameters
       prm.add_parameter("Initial refinement", initial_refinement);
       prm.add_parameter("Number of cycles", n_cycles);
       prm.add_parameter("Exact solution expression", exact_solution_expression);
+      prm.add_parameter("Neumann data expression", neumann_function_expression);
       prm.add_parameter("Right hand side expression", rhs_expression);
       prm.add_parameter("Lame coefficient mu", mu);
       prm.add_parameter("Lame coefficient lambda", lambda);
+      prm.add_parameter("Local refinement top fraction", top_fraction);
+      prm.add_parameter("Local refinement bottom fraction", bottom_fraction);
+      prm.add_parameter("Dirichlet boundary ids", dirichlet_ids);
+      prm.add_parameter("Neumann boundary ids", neumann_ids);
     }
     prm.leave_subsection();
 
@@ -75,17 +83,29 @@ struct LinearElasticityParameters
     rhs_function.initialize(FunctionParser<dim>::default_variable_names(),
                             {rhs_expression},
                             constants);
+
+    neumann_function.initialize(FunctionParser<dim>::default_variable_names(),
+                                {neumann_function_expression},
+                                constants);
   }
-  unsigned int fe_degree                 = 1;
-  unsigned int initial_refinement        = 3;
-  unsigned int n_cycles                  = 1;
-  std::string  exact_solution_expression = "0; 0";
-  std::string  rhs_expression            = "0; 0";
-  double       mu                        = 1.0;
-  double       lambda                    = 1.0;
+  unsigned int fe_degree                   = 1;
+  unsigned int initial_refinement          = 3;
+  unsigned int n_cycles                    = 1;
+  std::string  exact_solution_expression   = "0; 0";
+  std::string  rhs_expression              = "0; 0";
+  std::string  neumann_function_expression = "0; 0";
+  double       mu                          = 1.0;
+  double       lambda                      = 1.0;
+
+  std::set<types::boundary_id> dirichlet_ids = {0};
+  std::set<types::boundary_id> neumann_ids   = {1};
+
+  double top_fraction    = .3;
+  double bottom_fraction = 0;
 
   FunctionParser<dim> exact_solution;
   FunctionParser<dim> rhs_function;
+  FunctionParser<dim> neumann_function;
 
   mutable ParsedConvergenceTable convergence_table;
 
@@ -165,15 +185,11 @@ LinearElasticity<dim>::setup_system()
             << std::endl;
 
   constraints.clear();
-  VectorTools::interpolate_boundary_values(dof_handler,
-                                           0,
-                                           par.exact_solution,
-                                           constraints);
-
-  VectorTools::interpolate_boundary_values(dof_handler,
-                                           1,
-                                           par.exact_solution,
-                                           constraints);
+  for (const auto &id : par.dirichlet_ids)
+    VectorTools::interpolate_boundary_values(dof_handler,
+                                             id,
+                                             par.exact_solution,
+                                             constraints);
 
   // Create hanging node constraints
   DoFTools::make_hanging_node_constraints(dof_handler, constraints);
@@ -195,12 +211,18 @@ template <int dim>
 void
 LinearElasticity<dim>::assemble_system()
 {
-  QGauss<dim> quadrature_formula(fe.degree + 1);
+  QGauss<dim>     quadrature_formula(fe.degree + 1);
+  QGauss<dim - 1> face_quadrature_formula(fe.degree + 1);
 
   FEValues<dim> fe_values(fe,
                           quadrature_formula,
                           update_values | update_gradients |
                             update_quadrature_points | update_JxW_values);
+
+  FEFaceValues<dim> fe_face_values(fe,
+                                   face_quadrature_formula,
+                                   update_values | update_quadrature_points |
+                                     update_JxW_values);
 
   const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
 
@@ -246,6 +268,28 @@ LinearElasticity<dim>::assemble_system()
                             par.rhs_function.value(x_q, comp_i) * // f(x_q)
                             fe_values.JxW(q_index));              // dx
           }
+
+      for (const auto &f : cell->face_indices())
+        if (cell->face(f)->at_boundary() &&
+            par.neumann_ids.find(cell->face(f)->boundary_id()) !=
+              par.neumann_ids.end())
+          {
+            fe_face_values.reinit(cell, f);
+            for (const unsigned int q_index :
+                 fe_face_values.quadrature_point_indices())
+              for (const unsigned int i : fe_values.dof_indices())
+                {
+                  const auto &phi_i =
+                    fe_face_values[displacements].value(i, q_index);
+                  const auto &x_q    = fe_face_values.quadrature_point(q_index);
+                  const auto  comp_i = fe.system_to_component_index(i).first;
+
+                  cell_rhs(i) +=
+                    (phi_i[comp_i] * par.neumann_function.value(x_q, comp_i) *
+                     fe_face_values.JxW(q_index));
+                }
+          }
+
 
       cell->get_dof_indices(local_dof_indices);
       constraints.distribute_local_to_global(
@@ -336,13 +380,22 @@ LinearElasticity<dim>::run()
         make_grid();
       else
         {
-          // estimate error
-          // refine mesh where error is larger
-          for (const auto &cell : triangulation.active_cell_iterators())
-            {
-              if (cell->center().distance(Point<dim>(0.5, 0.5)) < 0.25)
-                cell->set_refine_flag();
-            }
+          // Estimate error
+          Vector<float> estimated_error_per_cell(
+            triangulation.n_active_cells());
+          KellyErrorEstimator<dim>::estimate(dof_handler,
+                                             QGauss<dim - 1>(fe.degree + 1),
+                                             {},
+                                             solution,
+                                             estimated_error_per_cell);
+          // Mark for refinement
+          GridRefinement::refine_and_coarsen_fixed_number(
+            triangulation,
+            estimated_error_per_cell,
+            par.top_fraction,
+            par.bottom_fraction);
+
+          // Actually refine
           triangulation.execute_coarsening_and_refinement();
         }
       setup_system();

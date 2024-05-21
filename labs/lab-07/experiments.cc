@@ -79,12 +79,22 @@ main()
                                           update_values | update_gradients |
                                             update_normal_vectors |
                                             update_JxW_values);
-  MeshWorker::CopyData<2>    copy_data;
+  struct CopyData
+  {
+    std::vector<double>                   errors;
+    std::vector<types::global_cell_index> cell_indices;
+  }
+
+  Vector<float>
+    cell_errors(tria.n_active_cells());
 
   // Define a cell worker function that prints the center of each cell
-  auto cell_worker = [](const auto &cell, auto &, auto &) {
-    std::cout << "  cell center: " << cell->center() << std::endl;
-  };
+  auto cell_worker =
+    [&cell_errors](const auto &cell, auto &scratch, auto &copy) {
+      std::cout << "  cell center: " << cell->center() << std::endl;
+      copy.errors.push_back(0);
+      copy.cell_indices.push_back(cell->global_cell_index());
+    };
 
   // Define a face worker function that computes and prints the integral over
   // each face
@@ -111,8 +121,21 @@ main()
     std::cout << "  integral: " << integral << std::endl;
   };
 
+  fun = [](auto &a, auto b) {
+    std::cout << "B : " << b << std::endl;
+    return a.size();
+
+
+    FEValuesExtractors::Scalar scalar(0);
+
+    fe_v[scalar].get_function_gradients(solution, gradients);
+  } auto size = fun(cell_errors, "ciao mondox");
+
   // Define a copier function (no operation in this case)
-  auto copier = [](const auto &) {};
+  auto copier = [&](const auto &copy) {
+    for (unsigned int i = 0; i < copy.cell_indices.size(); ++i)
+      cell_errors[copy.cell_indices[i]] += copy.errors[i];
+  };
 
   // Run the mesh loop using the defined cell worker, face worker, and copier
   // functions

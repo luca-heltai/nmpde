@@ -24,6 +24,10 @@
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/vector.h>
 
+#include <deal.II/meshworker/copy_data.h>
+#include <deal.II/meshworker/mesh_loop.h>
+#include <deal.II/meshworker/scratch_data.h>
+
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/matrix_tools.h>
@@ -143,6 +147,7 @@ private:
   Vector<double> solution;
   Vector<double> system_rhs;
   Vector<float>  estimated_error_per_cell;
+  Vector<float>  kelly_estimated_error_per_cell;
 };
 
 
@@ -180,7 +185,107 @@ Poisson<dim>::estimate()
                                      QGauss<dim - 1>(fe.degree + 1),
                                      {},
                                      solution,
-                                     estimated_error_per_cell);
+                                     kelly_estimated_error_per_cell);
+
+
+  // Run the mesh loop using the defined cell worker, face worker, and copier
+  // functions
+
+  MeshWorker::ScratchData<dim> scratch_data(
+    fe,
+    QGauss<dim>(fe.degree + 1),
+    update_hessians | update_quadrature_points | update_JxW_values,
+    QGauss<dim - 1>(fe.degree + 1),
+    update_gradients | update_normal_vectors | update_JxW_values);
+
+  struct CopyData
+  {
+    std::vector<double>       errors;
+    std::vector<unsigned int> cell_indices;
+  };
+
+  CopyData copy_data;
+
+  const auto copier = [&](const auto &copy) {
+    for (unsigned int i = 0; i < copy.cell_indices.size(); ++i)
+      estimated_error_per_cell[copy.cell_indices[i]] += copy.errors[i];
+  };
+
+  const auto cell_worker = [&](const auto &cell, auto &scratch, auto &copy) {
+    const auto &fe_v = scratch.reinit(cell);
+    const auto &dofs = scratch.get_local_dof_indices();
+    const auto  H    = cell->diameter();
+
+    double integral = 0;
+    for (const auto q : fe_v.quadrature_point_indices())
+      {
+        double laplacian = 0;
+        for (unsigned int i = 0; i < fe_v.dofs_per_cell; ++i)
+          {
+            laplacian += trace(fe_v.shape_hessian(i, q)) * solution[dofs[i]];
+          }
+        const auto res =
+          laplacian + par.rhs_function.value(fe_v.quadrature_point(q));
+        integral += (res * res) * H * H * fe_v.JxW(q);
+      }
+
+    copy.errors.push_back(integral);
+    copy.cell_indices.push_back(cell->active_cell_index());
+  };
+
+  const auto face_worker = [&](const auto        &cell,
+                               const unsigned int face_no,
+                               const unsigned int sub_face_no,
+                               const auto        &n_cell,
+                               const unsigned int n_face_no,
+                               const unsigned int n_sub_face_no,
+                               auto              &scratch,
+                               auto              &copy) {
+    auto &fe_v = scratch.reinit(
+      cell, face_no, sub_face_no, n_cell, n_face_no, n_sub_face_no);
+
+    // Compute the integral of the gradients dot normal vectors
+    double integral = 0;
+    for (const auto q : fe_v.quadrature_point_indices())
+      {
+        // compute the jump in gradient using a loop over finite element indices
+        Tensor<1, dim> gradient_jump;
+        const auto    &dofs = scratch.get_local_dof_indices();
+        for (unsigned int i = 0; i < fe_v.n_current_interface_dofs(); ++i)
+          {
+            gradient_jump += fe_v.jump_gradient(i, q) * solution[dofs[i]];
+          }
+        const auto jump = gradient_jump * fe_v.normal(q);
+        integral += 1. / 24.0 * (jump * jump) * cell->diameter() * fe_v.JxW(q);
+      }
+
+    copy.errors.push_back(integral);
+    copy.cell_indices.push_back(cell->active_cell_index());
+  };
+
+
+  MeshWorker::mesh_loop(dof_handler.begin_active(),
+                        dof_handler.end(),
+                        cell_worker,
+                        copier,
+                        scratch_data,
+                        copy_data,
+                        MeshWorker::assemble_own_cells |
+                          MeshWorker::assemble_own_interior_faces_both,
+                        {},
+                        face_worker);
+
+  for (auto &entry : estimated_error_per_cell)
+    entry = std::sqrt(entry);
+
+  auto tmp = estimated_error_per_cell;
+  tmp -= kelly_estimated_error_per_cell;
+
+  std::cout << "Kelly: " << kelly_estimated_error_per_cell.l2_norm()
+            << std::endl;
+  std::cout << "Error: " << estimated_error_per_cell.l2_norm() << std::endl;
+
+  std::cout << "Error on error: " << tmp.l2_norm() << std::endl;
 }
 
 
@@ -233,6 +338,7 @@ Poisson<dim>::setup_system()
   solution.reinit(dof_handler.n_dofs());
   system_rhs.reinit(dof_handler.n_dofs());
   estimated_error_per_cell.reinit(triangulation.n_active_cells());
+  kelly_estimated_error_per_cell.reinit(triangulation.n_active_cells());
 }
 
 
@@ -326,7 +432,9 @@ Poisson<dim>::output_results(const unsigned int cycle) const
 
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(solution, "solution");
-  data_out.add_data_vector(estimated_error_per_cell, "kelly");
+  data_out.add_data_vector(estimated_error_per_cell,
+                           "standard_error_estimator");
+  data_out.add_data_vector(kelly_estimated_error_per_cell, "kelly");
 
   data_out.build_patches();
 
@@ -356,6 +464,10 @@ Poisson<dim>::run()
   // Prepare convergence table to output estimator as well:
 
   par.convergence_table.add_extra_column("kelly", [&]() {
+    return kelly_estimated_error_per_cell.l2_norm();
+  });
+
+  par.convergence_table.add_extra_column("standard_error_estimator", [&]() {
     return estimated_error_per_cell.l2_norm();
   });
 
