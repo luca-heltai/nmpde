@@ -1,0 +1,50 @@
+# Listing of Parameters
+# ---------------------
+subsection Convergence table
+  # When set to false, no computations are performed.
+  set Enable computation of the errors = true
+
+  # Set this to a filename with extension .txt, .gpl, .org, or .tex to enable
+  # writing the convergence table to a file.
+  set Error file name                  = 
+
+  # Number of digits to use when printing the error.
+  set Error precision                  = 6
+
+  # The exponent to use when computing p-norms.
+  set Exponent for p-norms             = 2
+
+  # Extra columns to add to the table. Available options are dofs and cells.
+  set Extra columns                    = cells, dofs
+
+  # Each component is separated by a semicolon and each norm by a comma. See
+  # the documentation of VectorTools::NormType for a list of implemented
+  # norms. If you want to skip a component, leave its entry empty.
+  set List of error norms to compute   = L2_norm, H1_norm; L2_norm
+
+  # Key to use when computing convergence rates. If this is set to a column
+  # that is not present, or to the empty string, then no error rates are
+  # computed.
+  set Rate key                         = dofs
+
+  # What type of error rate to compute. Available options are
+  # reduction_rate_log2, reduction_rate, and none.
+  set Rate mode                        = reduction_rate_log2
+end
+
+
+subsection Stokes parameters
+  set Dirichlet boundary ids           = 0,1,2,3
+  set Finite element degree            = 2
+  set Initial refinement               = 3
+  set Local refinement bottom fraction = 0
+  set Local refinement top fraction    = 1
+  set Neumann boundary ids             = 1
+  set Number of cycles                 = 5
+  set Exact solution expression        = x^2*y^2*(1 - x)^2*(2*y - 2) + 2*x^2*y*(1 - x)^2*(1 - y)^2; -x^2*y^2*(1 - y)^2*(2*x - 2) - 2*x*y^2*(1 - x)^2*(1 - y)^2; x*y*(1 - x)*(1 - y)
+  set Right hand side expression       = -12*x^2*(x - 1)^2*(2*y - 1) - x*y*(1 - y) + y*(1 - x)*(1 - y) - 4*y*(y - 1)*(x^2*y + x^2*(y - 1) + 4*x*y*(x - 1) + 4*x*(x - 1)*(y - 1) + y*(x - 1)^2 + (x - 1)^2*(y - 1)); -x*y*(1 - x) + x*(1 - x)*(1 - y) + 4*x*(x - 1)*(x*y^2 + 4*x*y*(y - 1) + x*(y - 1)^2 + y^2*(x - 1) + 4*y*(x - 1)*(y - 1) + (x - 1)*(y - 1)^2) + 12*y^2*(2*x - 1)*(y - 1)^2; 0
+  set Neumann data expression          = 0; 0; 0
+  set Viscosity                        = 1
+end
+
+

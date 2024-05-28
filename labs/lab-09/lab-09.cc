@@ -9,6 +9,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 
+#include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
 #include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
@@ -22,6 +23,7 @@
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
+#include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/vector.h>
 
@@ -36,15 +38,17 @@
 using namespace dealii;
 
 template <int dim>
-struct LinearElasticityParameters
+struct StokesParameters
 {
-  LinearElasticityParameters()
-    : exact_solution(dim)
-    , rhs_function(dim)
-    , neumann_function(dim)
-    , convergence_table({"u", "u"})
+  StokesParameters()
+    : exact_solution(dim + 1)
+    , rhs_function(dim + 1)
+    , neumann_function(dim + 1)
+    , convergence_table({"u", "u", "p"},
+                        {{VectorTools::H1_norm, VectorTools::L2_norm},
+                         {VectorTools::L2_norm}})
   {
-    prm.enter_subsection("LinearElasticity parameters");
+    prm.enter_subsection("Stokes parameters");
     {
       prm.add_parameter("Finite element degree", fe_degree);
       prm.add_parameter("Initial refinement", initial_refinement);
@@ -52,8 +56,7 @@ struct LinearElasticityParameters
       prm.add_parameter("Exact solution expression", exact_solution_expression);
       prm.add_parameter("Neumann data expression", neumann_function_expression);
       prm.add_parameter("Right hand side expression", rhs_expression);
-      prm.add_parameter("Lame coefficient mu", mu);
-      prm.add_parameter("Lame coefficient lambda", lambda);
+      prm.add_parameter("Viscosity", eta);
       prm.add_parameter("Local refinement top fraction", top_fraction);
       prm.add_parameter("Local refinement bottom fraction", bottom_fraction);
       prm.add_parameter("Dirichlet boundary ids", dirichlet_ids);
@@ -67,13 +70,12 @@ struct LinearElasticityParameters
 
     try
       {
-        prm.parse_input("LinearElasticity_" + std::to_string(dim) + "d.prm");
+        prm.parse_input("stokes_" + std::to_string(dim) + "d.prm");
       }
     catch (std::exception &exc)
       {
-        prm.print_parameters("LinearElasticity_" + std::to_string(dim) +
-                             "d.prm");
-        prm.parse_input("LinearElasticity_" + std::to_string(dim) + "d.prm");
+        prm.print_parameters("stokes_" + std::to_string(dim) + "d.prm");
+        prm.parse_input("stokes_" + std::to_string(dim) + "d.prm");
       }
     std::map<std::string, double> constants;
     constants["pi"] = numbers::PI;
@@ -91,11 +93,10 @@ struct LinearElasticityParameters
   unsigned int fe_degree                   = 1;
   unsigned int initial_refinement          = 3;
   unsigned int n_cycles                    = 1;
-  std::string  exact_solution_expression   = "0; 0";
-  std::string  rhs_expression              = "0; 0";
-  std::string  neumann_function_expression = "0; 0";
-  double       mu                          = 1.0;
-  double       lambda                      = 1.0;
+  std::string  exact_solution_expression   = "0; 0; 0";
+  std::string  rhs_expression              = "0; 0; 0";
+  std::string  neumann_function_expression = "0; 0; 0";
+  double       eta                         = 1.0;
 
   std::set<types::boundary_id> dirichlet_ids = {0};
   std::set<types::boundary_id> neumann_ids   = {1};
@@ -115,10 +116,10 @@ struct LinearElasticityParameters
 
 
 template <int dim>
-class LinearElasticity
+class Stokes
 {
 public:
-  LinearElasticity(const LinearElasticityParameters<dim> &parameters);
+  Stokes(const StokesParameters<dim> &parameters);
   void
   run();
 
@@ -134,7 +135,7 @@ private:
   void
   output_results(const unsigned int cycle) const;
 
-  const LinearElasticityParameters<dim> &par;
+  const StokesParameters<dim> &par;
 
   Triangulation<dim> triangulation;
   FESystem<dim>      fe;
@@ -152,10 +153,9 @@ private:
 
 
 template <int dim>
-LinearElasticity<dim>::LinearElasticity(
-  const LinearElasticityParameters<dim> &par)
+Stokes<dim>::Stokes(const StokesParameters<dim> &par)
   : par(par)
-  , fe(FE_Q<dim>(par.fe_degree), dim)
+  , fe(FE_Q<dim>(par.fe_degree), dim, FE_DGP<dim>(par.fe_degree - 1), 1)
   , dof_handler(triangulation)
 {}
 
@@ -163,9 +163,9 @@ LinearElasticity<dim>::LinearElasticity(
 
 template <int dim>
 void
-LinearElasticity<dim>::make_grid()
+Stokes<dim>::make_grid()
 {
-  GridGenerator::hyper_cube(triangulation, -1, 1, true);
+  GridGenerator::hyper_cube(triangulation, 0, 1, true);
   triangulation.refine_global(par.initial_refinement);
 
   std::cout << "   Number of active cells: " << triangulation.n_active_cells()
@@ -177,7 +177,7 @@ LinearElasticity<dim>::make_grid()
 
 template <int dim>
 void
-LinearElasticity<dim>::setup_system()
+Stokes<dim>::setup_system()
 {
   dof_handler.distribute_dofs(fe);
 
@@ -209,7 +209,7 @@ LinearElasticity<dim>::setup_system()
 
 template <int dim>
 void
-LinearElasticity<dim>::assemble_system()
+Stokes<dim>::assemble_system()
 {
   QGauss<dim>     quadrature_formula(fe.degree + 1);
   QGauss<dim - 1> face_quadrature_formula(fe.degree + 1);
@@ -231,7 +231,8 @@ LinearElasticity<dim>::assemble_system()
 
   std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
 
-  FEValuesExtractors::Vector displacements(0);
+  FEValuesExtractors::Vector velocity(0);
+  FEValuesExtractors::Scalar pressure(dim);
 
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
@@ -242,106 +243,70 @@ LinearElasticity<dim>::assemble_system()
       for (const unsigned int q_index : fe_values.quadrature_point_indices())
         for (const unsigned int i : fe_values.dof_indices())
           {
-            const auto &phi_i = fe_values[displacements].value(i, q_index);
-            const auto &div_phi_i =
-              fe_values[displacements].divergence(i, q_index);
-            const auto &eps_phi_i =
-              fe_values[displacements].symmetric_gradient(i, q_index);
+            const auto &v_i        = fe_values[velocity].value(i, q_index);
+            const auto &div_v_i    = fe_values[velocity].divergence(i, q_index);
+            const auto &grad_phi_i = fe_values[velocity].gradient(i, q_index);
+            const auto &q_i        = fe_values[pressure].value(i, q_index);
 
             for (const unsigned int j : fe_values.dof_indices())
               {
-                const auto &div_phi_j =
-                  fe_values[displacements].divergence(j, q_index);
-                const auto &eps_phi_j =
-                  fe_values[displacements].symmetric_gradient(j, q_index);
+                // const auto &v_j = fe_values[velocity].value(j, q_index);
+                const auto &div_v_j =
+                  fe_values[velocity].divergence(j, q_index);
+                const auto &grad_phi_j =
+                  fe_values[velocity].gradient(j, q_index);
+                const auto &q_j = fe_values[pressure].value(j, q_index);
+
 
                 cell_matrix(i, j) +=
-                  (par.mu * scalar_product(eps_phi_i, eps_phi_j) +
-                   par.lambda * div_phi_i * div_phi_j) *
+                  (par.eta * scalar_product(grad_phi_i, grad_phi_j) +
+                   div_v_i * q_j + q_i * div_v_j) *
                   fe_values.JxW(q_index); // dx
               }
 
             const auto &x_q    = fe_values.quadrature_point(q_index);
             const auto  comp_i = fe.system_to_component_index(i).first;
 
-            cell_rhs(i) += (phi_i[comp_i] *                       // phi_i(x_q)
-                            par.rhs_function.value(x_q, comp_i) * // f(x_q)
-                            fe_values.JxW(q_index));              // dx
+            if (comp_i < dim)
+              cell_rhs(i) += (v_i[comp_i] * // phi_i(x_q)
+                              par.rhs_function.value(x_q, comp_i) * // f(x_q)
+                              fe_values.JxW(q_index));              // dx
           }
-
-      for (const auto &f : cell->face_indices())
-        if (cell->face(f)->at_boundary() &&
-            par.neumann_ids.find(cell->face(f)->boundary_id()) !=
-              par.neumann_ids.end())
-          {
-            fe_face_values.reinit(cell, f);
-            for (const unsigned int q_index :
-                 fe_face_values.quadrature_point_indices())
-              for (const unsigned int i : fe_values.dof_indices())
-                {
-                  const auto &phi_i =
-                    fe_face_values[displacements].value(i, q_index);
-                  const auto &x_q    = fe_face_values.quadrature_point(q_index);
-                  const auto  comp_i = fe.system_to_component_index(i).first;
-
-                  cell_rhs(i) +=
-                    (phi_i[comp_i] * par.neumann_function.value(x_q, comp_i) *
-                     fe_face_values.JxW(q_index));
-                }
-          }
-
 
       cell->get_dof_indices(local_dof_indices);
       constraints.distribute_local_to_global(
         cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
-      // for (const unsigned int i : fe_values.dof_indices())
-      //   {
-      //     for (const unsigned int j : fe_values.dof_indices())
-      //       system_matrix.add(local_dof_indices[i],
-      //                         local_dof_indices[j],
-      //                         cell_matrix(i, j));
-
-      //     system_rhs(local_dof_indices[i]) += cell_rhs(i);
-      //   }
     }
-
-  // std::map<types::global_dof_index, double> boundary_values;
-  // VectorTools::interpolate_boundary_values(dof_handler,
-  //                                          0,
-  //                                          par.exact_solution,
-  //                                          boundary_values);
-  // MatrixTools::apply_boundary_values(boundary_values,
-  //                                    system_matrix,
-  //                                    solution,
-  //                                    system_rhs);
 }
 
 
 
 template <int dim>
 void
-LinearElasticity<dim>::solve()
+Stokes<dim>::solve()
 {
-  SolverControl            solver_control(1000, 1e-12);
-  SolverCG<Vector<double>> solver(solver_control);
-  solver.solve(system_matrix, solution, system_rhs, PreconditionIdentity());
+  SparseDirectUMFPACK solver;
+  solver.initialize(system_matrix);
+  solver.vmult(solution, system_rhs);
   constraints.distribute(solution);
-
-  std::cout << "   " << solver_control.last_step()
-            << " CG iterations needed to obtain convergence." << std::endl;
 }
 
 
 
 template <int dim>
 void
-LinearElasticity<dim>::output_results(const unsigned int cycle) const
+Stokes<dim>::output_results(const unsigned int cycle) const
 {
   DataOut<dim>             data_out;
-  std::vector<std::string> names(dim, "displacement");
-  const std::vector<DataComponentInterpretation::DataComponentInterpretation>
+  std::vector<std::string> names(dim, "velocity");
+  names.push_back("pressure");
+
+  std::vector<DataComponentInterpretation::DataComponentInterpretation>
     data_component_interpretation(
       dim, DataComponentInterpretation::component_is_part_of_vector);
+
+  data_component_interpretation.push_back(
+    DataComponentInterpretation::component_is_scalar);
 
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(solution,
@@ -369,7 +334,7 @@ LinearElasticity<dim>::output_results(const unsigned int cycle) const
 
 template <int dim>
 void
-LinearElasticity<dim>::run()
+Stokes<dim>::run()
 {
   std::cout << "Solving problem in " << dim << " space dimensions."
             << std::endl;
@@ -415,14 +380,14 @@ int
 main()
 {
   {
-    LinearElasticityParameters<2> par;
-    LinearElasticity<2>           laplace_problem_2d(par);
+    StokesParameters<2> par;
+    Stokes<2>           laplace_problem_2d(par);
     laplace_problem_2d.run();
   }
 
   // {
-  //   LinearElasticityParameters<3> par;
-  //   LinearElasticity<3>           laplace_problem_3d(par);
+  //   StokesParameters<3> par;
+  //   Stokes<3>           laplace_problem_3d(par);
   //   laplace_problem_3d.run();
   // }
 
