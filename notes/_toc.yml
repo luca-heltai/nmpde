@@ -6,5 +6,15 @@ root: intro
 chapters:
   - file: syllabus
   - file: references
-# - file: notebooks
-# - file: markdown-notebooks
+  - file: laboratories
+    sections:
+      - file: lab-01
+      - file: lab-02
+      - file: lab-03
+      - file: lab-04
+      - file: lab-05
+      - file: lab-06
+      - file: lab-07
+      - file: lab-08
+      - file: lab-09
+  - file: projects

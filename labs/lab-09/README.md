@@ -39,7 +39,7 @@ To derive the weak form, we introduce test functions $\mathbf{v}$ for the veloci
 
 1. **Momentum Equation (Weak Form):**
    $$
-   \int_\Omega \eta (\nabla \mathbf{u} : \nabla \mathbf{v}) \, d\Omega - \int_\Omega p (\nabla \cdot \mathbf{v}) \, d\Omega = \int_\Omega \mathbf{f} \cdot \mathbf{v} \, d\Omega + \int_{\Gamma_N} \mathbf{h} \cdot \mathbf{v} \, d\Gamma
+   \int_\Omega \eta (\nabla \mathbf{u} : \nabla \mathbf{v}) \, d\Omega + \int_\Omega p (\nabla \cdot \mathbf{v}) \, d\Omega = \int_\Omega \mathbf{f} \cdot \mathbf{v} \, d\Omega + \int_{\Gamma_N} \mathbf{h} \cdot \mathbf{v} \, d\Gamma
    $$
    where:
    - $\mathbf{u}$ is the velocity vector.
