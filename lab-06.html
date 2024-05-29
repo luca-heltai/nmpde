@@ -1,0 +1,873 @@
+
+<!DOCTYPE html>
+
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Lab: Vector-Valued Finite Element Spaces in Linear Elasticity &#8212; Numerical Methods for Partial Differential Equations</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="_static/proof.css" />
+    <link rel="stylesheet" type="text/css" href="_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/clipboard.min.js"></script>
+    <script src="_static/copybutton.js"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="_static/togglebutton.js"></script>
+    <script src="_static/translations.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="_static/design-tabs.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = ".thebe,.cell"
+const thebe_selector_input = "pre"
+const thebe_selector_output = ".output, .cell_output"
+</script>
+    <script async="async" src="_static/sphinx-thebe.js"></script>
+    <link rel="index" title="Indice" href="genindex.html" />
+    <link rel="search" title="Cerca" href="search.html" />
+    <link rel="next" title="Lab: Error Estimation using MeshWorker::mesh_loop" href="lab-07.html" />
+    <link rel="prev" title="Lab 5: Improving the Poisson Solver (ParsedConvergenceTable and AffineConstraints)" href="lab-05.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="it">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="_static/logo.png" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">Numerical Methods for Partial Differential Equations</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="intro.html">
+                    Introduction
+                </a>
+            </li>
+        </ul>
+        <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="syllabus.html">
+   Syllabus
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="references.html">
+   References
+  </a>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="laboratories.html">
+   Laboratories
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-01.html">
+     Introduction to deal.II: A Hands-On Laboratory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-02.html">
+     Lab 2: Exploring Basis Functions in deal.II
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-03.html">
+     Lab: Interpolating Functions and Computing Errors in deal.II
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-04.html">
+     Lab: Solving the Poisson Equation in deal.II
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-05.html">
+     Lab 5: Improving the Poisson Solver (ParsedConvergenceTable and AffineConstraints)
+    </a>
+   </li>
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     Lab: Vector-Valued Finite Element Spaces in Linear Elasticity
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-07.html">
+     Lab: Error Estimation using MeshWorker::mesh_loop
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-08.html">
+     Lab: From CG Poisson to DG Poisson (SIPG)
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-09.html">
+     Lab: Saddle point problems: Stokes Flow around a cylinder
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="projects.html">
+   Final projects
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Powered by <a href="https://jupyterbook.org">Jupyter Book</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+<div class="menu-dropdown menu-dropdown-repository-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Source repositories">
+      <i class="fab fa-github"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="https://github.com/luca-heltai/nmpde"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="headerbtn__text-container">repository</span>
+</a>
+
+      </li>
+      
+      <li>
+        <a href="https://github.com/luca-heltai/nmpde/issues/new?title=Issue%20on%20page%20%2Flab-06.html&body=Your%20issue%20content%20here."
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Open an issue"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="headerbtn__text-container">open issue</span>
+</a>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="_sources/lab-06.md"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.md</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#overview">
+   Overview
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#salient-changes-for-vector-valued-elements">
+   Salient Changes for Vector-Valued Elements
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#fesystem">
+     FESystem
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#fevaluesextractors">
+     FEValuesExtractors
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#assembly-and-boundary-conditions">
+     Assembly and Boundary Conditions
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#dirichlet-boundary-conditions">
+       Dirichlet Boundary Conditions
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#neumann-boundary-conditions">
+       Neumann Boundary Conditions
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#exercises">
+   Exercises
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-1-implement-non-homogeneous-neumann-boundary-conditions">
+     Exercise 1: Implement Non-Homogeneous Neumann Boundary Conditions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-2-perform-dirichlet-pulling-experiment">
+     Exercise 2: Perform Dirichlet Pulling Experiment
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-3-perform-neumann-pulling-experiment">
+     Exercise 3: Perform Neumann Pulling Experiment
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-4-perform-cantilever-experiment">
+     Exercise 4: Perform Cantilever Experiment
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#code-snippets">
+   Code Snippets
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#assembly-with-non-homogeneous-neumann-boundary-conditions">
+     Assembly with Non-Homogeneous Neumann Boundary Conditions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#running-the-simulation">
+     Running the Simulation
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Lab: Vector-Valued Finite Element Spaces in Linear Elasticity</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#overview">
+   Overview
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#salient-changes-for-vector-valued-elements">
+   Salient Changes for Vector-Valued Elements
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#fesystem">
+     FESystem
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#fevaluesextractors">
+     FEValuesExtractors
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#assembly-and-boundary-conditions">
+     Assembly and Boundary Conditions
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#dirichlet-boundary-conditions">
+       Dirichlet Boundary Conditions
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#neumann-boundary-conditions">
+       Neumann Boundary Conditions
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#exercises">
+   Exercises
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-1-implement-non-homogeneous-neumann-boundary-conditions">
+     Exercise 1: Implement Non-Homogeneous Neumann Boundary Conditions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-2-perform-dirichlet-pulling-experiment">
+     Exercise 2: Perform Dirichlet Pulling Experiment
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-3-perform-neumann-pulling-experiment">
+     Exercise 3: Perform Neumann Pulling Experiment
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-4-perform-cantilever-experiment">
+     Exercise 4: Perform Cantilever Experiment
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#code-snippets">
+   Code Snippets
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#assembly-with-non-homogeneous-neumann-boundary-conditions">
+     Assembly with Non-Homogeneous Neumann Boundary Conditions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#running-the-simulation">
+     Running the Simulation
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section class="tex2jax_ignore mathjax_ignore" id="lab-vector-valued-finite-element-spaces-in-linear-elasticity">
+<h1>Lab: Vector-Valued Finite Element Spaces in Linear Elasticity<a class="headerlink" href="#lab-vector-valued-finite-element-spaces-in-linear-elasticity" title="Link a questa intestazione">#</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link a questa intestazione">#</a></h2>
+<p>In this lab, you will work with vector-valued finite element spaces to solve linear elasticity problems using the deal.II library. You will learn about using <code class="docutils literal notranslate"><span class="pre">FESystem</span></code> for creating vector-valued finite elements and <code class="docutils literal notranslate"><span class="pre">FEValuesExtractors</span></code> for accessing individual components of the vector fields. Additionally, you will implement non-homogeneous Neumann boundary conditions and perform three different types of experiments: Dirichlet pulling experiment, Neumann pulling experiment, and cantilever experiment.</p>
+</section>
+<section id="salient-changes-for-vector-valued-elements">
+<h2>Salient Changes for Vector-Valued Elements<a class="headerlink" href="#salient-changes-for-vector-valued-elements" title="Link a questa intestazione">#</a></h2>
+<section id="fesystem">
+<h3>FESystem<a class="headerlink" href="#fesystem" title="Link a questa intestazione">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">FESystem</span></code> is used to create a vector-valued finite element space by combining scalar finite elements. In this lab, <code class="docutils literal notranslate"><span class="pre">FESystem&lt;dim&gt;</span></code> is created using <code class="docutils literal notranslate"><span class="pre">FE_Q&lt;dim&gt;</span></code> elements:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">FESystem</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fe</span><span class="p">(</span><span class="n">FE_Q</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="p">(</span><span class="n">par</span><span class="p">.</span><span class="n">fe_degree</span><span class="p">),</span><span class="w"> </span><span class="n">dim</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="fevaluesextractors">
+<h3>FEValuesExtractors<a class="headerlink" href="#fevaluesextractors" title="Link a questa intestazione">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">FEValuesExtractors</span></code> are used to access specific components of the vector field in <code class="docutils literal notranslate"><span class="pre">FEValues</span></code> and <code class="docutils literal notranslate"><span class="pre">FEFaceValues</span></code> objects. For example, to extract displacement components:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">FEValuesExtractors</span><span class="o">::</span><span class="n">Vector</span><span class="w"> </span><span class="nf">displacements</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>This extractor can then be used to access the values, gradients, and other quantities of the displacement field.</p>
+</section>
+<section id="assembly-and-boundary-conditions">
+<h3>Assembly and Boundary Conditions<a class="headerlink" href="#assembly-and-boundary-conditions" title="Link a questa intestazione">#</a></h3>
+<p>In vector-valued problems, the assembly of the system matrix and right-hand side vector involves operations on vector fields. The implementation of boundary conditions (both Dirichlet and Neumann) also needs to be adapted for vector-valued elements.</p>
+<section id="dirichlet-boundary-conditions">
+<h4>Dirichlet Boundary Conditions<a class="headerlink" href="#dirichlet-boundary-conditions" title="Link a questa intestazione">#</a></h4>
+<p>Dirichlet boundary conditions are imposed using <code class="docutils literal notranslate"><span class="pre">AffineConstraints&lt;double&gt;</span></code>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">id</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">par</span><span class="p">.</span><span class="n">dirichlet_ids</span><span class="p">)</span><span class="w"></span>
+<span class="w">  </span><span class="n">VectorTools</span><span class="o">::</span><span class="n">interpolate_boundary_values</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                           </span><span class="n">id</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                           </span><span class="n">par</span><span class="p">.</span><span class="n">exact_solution</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                           </span><span class="n">constraints</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="neumann-boundary-conditions">
+<h4>Neumann Boundary Conditions<a class="headerlink" href="#neumann-boundary-conditions" title="Link a questa intestazione">#</a></h4>
+<p>Neumann boundary conditions are implemented by integrating the Neumann data over the boundary faces:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">f</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">cell</span><span class="o">-&gt;</span><span class="n">face_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cell</span><span class="o">-&gt;</span><span class="n">face</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">at_boundary</span><span class="p">()</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"></span>
+<span class="w">      </span><span class="n">par</span><span class="p">.</span><span class="n">neumann_ids</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="n">cell</span><span class="o">-&gt;</span><span class="n">face</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">boundary_id</span><span class="p">())</span><span class="w"> </span><span class="o">!=</span><span class="w"> </span><span class="n">par</span><span class="p">.</span><span class="n">neumann_ids</span><span class="p">.</span><span class="n">end</span><span class="p">())</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="n">fe_face_values</span><span class="p">.</span><span class="n">reinit</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">q_index</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fe_face_values</span><span class="p">.</span><span class="n">quadrature_point_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fe_values</span><span class="p">.</span><span class="n">dof_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">          </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">phi_i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fe_face_values</span><span class="p">[</span><span class="n">displacements</span><span class="p">].</span><span class="n">value</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">x_q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fe_face_values</span><span class="p">.</span><span class="n">quadrature_point</span><span class="p">(</span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="n">comp_i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fe</span><span class="p">.</span><span class="n">system_to_component_index</span><span class="p">(</span><span class="n">i</span><span class="p">).</span><span class="n">first</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">            </span><span class="n">cell_rhs</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">phi_i</span><span class="p">[</span><span class="n">comp_i</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">par</span><span class="p">.</span><span class="n">neumann_function</span><span class="p">.</span><span class="n">value</span><span class="p">(</span><span class="n">x_q</span><span class="p">,</span><span class="w"> </span><span class="n">comp_i</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"></span>
+<span class="w">                           </span><span class="n">fe_face_values</span><span class="p">.</span><span class="n">JxW</span><span class="p">(</span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link a questa intestazione">#</a></h2>
+<section id="exercise-1-implement-non-homogeneous-neumann-boundary-conditions">
+<h3>Exercise 1: Implement Non-Homogeneous Neumann Boundary Conditions<a class="headerlink" href="#exercise-1-implement-non-homogeneous-neumann-boundary-conditions" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Modify the <code class="docutils literal notranslate"><span class="pre">assemble_system</span></code> Method:</strong></p>
+<ul class="simple">
+<li><p>Ensure that non-homogeneous Neumann boundary conditions are correctly implemented as shown in the provided code.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="exercise-2-perform-dirichlet-pulling-experiment">
+<h3>Exercise 2: Perform Dirichlet Pulling Experiment<a class="headerlink" href="#exercise-2-perform-dirichlet-pulling-experiment" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Setup:</strong></p>
+<ul class="simple">
+<li><p>Fix one side of the domain (e.g., <code class="docutils literal notranslate"><span class="pre">x=0</span></code>) with Dirichlet boundary conditions.</p></li>
+<li><p>Apply a uniform displacement on the opposite side (e.g., <code class="docutils literal notranslate"><span class="pre">x=1</span></code>).</p></li>
+</ul>
+</li>
+<li><p><strong>Run and Analyze:</strong></p>
+<ul class="simple">
+<li><p>Run the simulation and visualize the displacement field.</p></li>
+<li><p>Analyze the results and check if the deformation is as expected.</p></li>
+</ul>
+</li>
+<li><p><strong>Physical considerations</strong></p>
+<ul class="simple">
+<li><p>What happens if you set <code class="docutils literal notranslate"><span class="pre">lambda</span></code> to 0 in this case?</p></li>
+<li><p>What happens if you set <code class="docutils literal notranslate"><span class="pre">lambda</span></code> to <code class="docutils literal notranslate"><span class="pre">1e5</span></code> in this case?</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="exercise-3-perform-neumann-pulling-experiment">
+<h3>Exercise 3: Perform Neumann Pulling Experiment<a class="headerlink" href="#exercise-3-perform-neumann-pulling-experiment" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Setup:</strong></p>
+<ul class="simple">
+<li><p>Fix one side of the domain (e.g., <code class="docutils literal notranslate"><span class="pre">x=0</span></code>) with Dirichlet boundary conditions.</p></li>
+<li><p>Apply a uniform traction (Neumann boundary condition) on the opposite side (e.g., <code class="docutils literal notranslate"><span class="pre">x=1</span></code>).</p></li>
+</ul>
+</li>
+<li><p><strong>Run and Analyze:</strong></p>
+<ul class="simple">
+<li><p>Run the simulation and visualize the displacement field.</p></li>
+<li><p>Analyze the results and check if the deformation is as expected.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="exercise-4-perform-cantilever-experiment">
+<h3>Exercise 4: Perform Cantilever Experiment<a class="headerlink" href="#exercise-4-perform-cantilever-experiment" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Setup:</strong></p>
+<ul class="simple">
+<li><p>Fix one side of the domain (e.g., <code class="docutils literal notranslate"><span class="pre">x=0</span></code>) with Dirichlet boundary conditions.</p></li>
+<li><p>Apply a point load or distributed load (Neumann boundary condition) at the free end (e.g., <code class="docutils literal notranslate"><span class="pre">x=1</span></code>).</p></li>
+</ul>
+</li>
+<li><p><strong>Run and Analyze:</strong></p>
+<ul class="simple">
+<li><p>Run the simulation and visualize the displacement field.</p></li>
+<li><p>Analyze the results and check if the deformation is as expected.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+<section id="code-snippets">
+<h2>Code Snippets<a class="headerlink" href="#code-snippets" title="Link a questa intestazione">#</a></h2>
+<section id="assembly-with-non-homogeneous-neumann-boundary-conditions">
+<h3>Assembly with Non-Homogeneous Neumann Boundary Conditions<a class="headerlink" href="#assembly-with-non-homogeneous-neumann-boundary-conditions" title="Link a questa intestazione">#</a></h3>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">dim</span><span class="o">&gt;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"> </span><span class="n">LinearElasticity</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;::</span><span class="n">assemble_system</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">QGauss</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w">     </span><span class="n">quadrature_formula</span><span class="p">(</span><span class="n">fe</span><span class="p">.</span><span class="n">degree</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">QGauss</span><span class="o">&lt;</span><span class="n">dim</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="o">&gt;</span><span class="w"> </span><span class="n">face_quadrature_formula</span><span class="p">(</span><span class="n">fe</span><span class="p">.</span><span class="n">degree</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">FEValues</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fe_values</span><span class="p">(</span><span class="n">fe</span><span class="p">,</span><span class="w"></span>
+<span class="w">                          </span><span class="n">quadrature_formula</span><span class="p">,</span><span class="w"></span>
+<span class="w">                          </span><span class="n">update_values</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">update_gradients</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">                            </span><span class="n">update_quadrature_points</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">update_JxW_values</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">FEFaceValues</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fe_face_values</span><span class="p">(</span><span class="n">fe</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                   </span><span class="n">face_quadrature_formula</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                   </span><span class="n">update_values</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">update_quadrature_points</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">                                     </span><span class="n">update_JxW_values</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">dofs_per_cell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fe</span><span class="p">.</span><span class="n">n_dofs_per_cell</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">FullMatrix</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cell_matrix</span><span class="p">(</span><span class="n">dofs_per_cell</span><span class="p">,</span><span class="w"> </span><span class="n">dofs_per_cell</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">Vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w">     </span><span class="n">cell_rhs</span><span class="p">(</span><span class="n">dofs_per_cell</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">types</span><span class="o">::</span><span class="n">global_dof_index</span><span class="o">&gt;</span><span class="w"> </span><span class="n">local_dof_indices</span><span class="p">(</span><span class="n">dofs_per_cell</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">FEValuesExtractors</span><span class="o">::</span><span class="n">Vector</span><span class="w"> </span><span class="nf">displacements</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cell</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">dof_handler</span><span class="p">.</span><span class="n">active_cell_iterators</span><span class="p">())</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="n">fe_values</span><span class="p">.</span><span class="n">reinit</span><span class="p">(</span><span class="n">cell</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="n">cell_matrix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">      </span><span class="n">cell_rhs</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">q_index</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fe_values</span><span class="p">.</span><span class="n">quadrature_point_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fe_values</span><span class="p">.</span><span class="n">dof_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">          </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">phi_i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fe_values</span><span class="p">[</span><span class="n">displacements</span><span class="p">].</span><span class="n">value</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">div_phi_i</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<span class="w">              </span><span class="n">fe_values</span><span class="p">[</span><span class="n">displacements</span><span class="p">].</span><span class="n">divergence</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">eps_phi_i</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<span class="w">              </span><span class="n">fe_values</span><span class="p">[</span><span class="n">displacements</span><span class="p">].</span><span class="n">symmetric_gradient</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fe_values</span><span class="p">.</span><span class="n">dof_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">              </span><span class="p">{</span><span class="w"></span>
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">div_phi_j</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<span class="w">                  </span><span class="n">fe_values</span><span class="p">[</span><span class="n">displacements</span><span class="p">].</span><span class="n">divergence</span><span class="p">(</span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+<span class="w">                </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">eps_phi_j</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<span class="w">                  </span><span class="n">fe_values</span><span class="p">[</span><span class="n">displacements</span><span class="p">].</span><span class="n">symmetric_gradient</span><span class="p">(</span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">                </span><span class="n">cell_matrix</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">+=</span><span class="w"></span>
+<span class="w">                  </span><span class="p">(</span><span class="n">par</span><span class="p">.</span><span class="n">mu</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">scalar_product</span><span class="p">(</span><span class="n">eps_phi_i</span><span class="p">,</span><span class="w"> </span><span class="n">eps_phi_j</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"></span>
+<span class="w">                   </span><span class="n">par</span><span class="p">.</span><span class="n">lambda</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">div_phi_i</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">div_phi_j</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"></span>
+<span class="w">                  </span><span class="n">fe_values</span><span class="p">.</span><span class="n">JxW</span><span class="p">(</span><span class="n">q_index</span><span class="p">);</span><span class="w"> </span><span class="c1">// dx</span>
+<span class="w">              </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">x_q</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">fe_values</span><span class="p">.</span><span class="n">quadrature_point</span><span class="p">(</span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w">  </span><span class="n">comp_i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fe</span><span class="p">.</span><span class="n">system_to_component_index</span><span class="p">(</span><span class="n">i</span><span class="p">).</span><span class="n">first</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">            </span><span class="n">cell_rhs</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="p">(</span><span class="n">phi_i</span><span class="p">[</span><span class="n">comp_i</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w">                       </span><span class="c1">// phi_i(x_q)</span>
+<span class="w">                            </span><span class="n">par</span><span class="p">.</span><span class="n">rhs_function</span><span class="p">.</span><span class="n">value</span><span class="p">(</span><span class="n">x_q</span><span class="p">,</span><span class="w"> </span><span class="n">comp_i</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="c1">// f(x_q)</span>
+<span class="w">                            </span><span class="n">fe_values</span><span class="p">.</span><span class="n">JxW</span><span class="p">(</span><span class="n">q_index</span><span class="p">));</span><span class="w">              </span><span class="c1">// dx</span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">f</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">cell</span><span class="o">-&gt;</span><span class="n">face_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cell</span><span class="o">-&gt;</span><span class="n">face</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">at_boundary</span><span class="p">()</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"></span>
+<span class="w">            </span><span class="n">par</span><span class="p">.</span><span class="n">neumann_ids</span><span class="p">.</span><span class="n">find</span><span class="p">(</span><span class="n">cell</span><span class="o">-&gt;</span><span class="n">face</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">-&gt;</span><span class="n">boundary_id</span><span class="p">())</span><span class="w"> </span><span class="o">!=</span><span class="w"></span>
+<span class="w">              </span><span class="n">par</span><span class="p">.</span><span class="n">neumann_ids</span><span class="p">.</span><span class="n">end</span><span class="p">())</span><span class="w"></span>
+<span class="w">          </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="n">fe_face_values</span><span class="p">.</span><span class="n">reinit</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span><span class="w"> </span><span class="n">f</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">q_index</span><span class="w"> </span><span class="o">:</span><span class="w"></span>
+<span class="w">                 </span><span class="n">fe_face_values</span><span class="p">.</span><span class="n">quadrature_point_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">              </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fe_values</span><span class="p">.</span><span class="n">dof_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">                </span><span class="p">{</span><span class="w"></span>
+<span class="w">                  </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">phi_i</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<span class="w">                    </span><span class="n">fe_face_values</span><span class="p">[</span><span class="n">displacements</span><span class="p">].</span><span class="n">value</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+<span class="w">                  </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">x_q</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="n">fe_face_values</span><span class="p">.</span><span class="n">quadrature_point</span><span class="p">(</span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+<span class="w">                  </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w">  </span><span class="n">comp_i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fe</span><span class="p">.</span><span class="n">system_to_component_index</span><span class="p">(</span><span class="n">i</span><span class="p">).</span><span class="n">first</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">                  </span><span class="n">cell_rhs</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">+=</span><span class="w"></span>
+<span class="w">                    </span><span class="p">(</span><span class="n">phi_i</span><span class="p">[</span><span class="n">comp_i</span><span class="p">]</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="n">par</span><span class="p">.</span><span class="n">neumann_function</span><span class="p">.</span><span class="n">value</span><span class="p">(</span><span class="n">x_q</span><span class="p">,</span><span class="w"> </span><span class="n">comp_i</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"></span>
+<span class="w">                     </span><span class="n">fe_face_values</span><span class="p">.</span><span class="n">JxW</span><span class="p">(</span><span class="n">q_index</span><span class="p">));</span><span class="w"></span>
+<span class="w">                </span><span class="p">}</span><span class="w"></span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+
+
+<span class="w">      </span><span class="n">cell</span><span class="o">-&gt;</span><span class="n">get_dof_indices</span><span class="p">(</span><span class="n">local_dof_indices</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="n">constraints</span><span class="p">.</span><span class="n">distribute_local_to_global</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="n">cell_matrix</span><span class="p">,</span><span class="w"> </span><span class="n">cell_rhs</span><span class="p">,</span><span class="w"> </span><span class="n">local_dof_indices</span><span class="p">,</span><span class="w"> </span><span class="n">system_matrix</span><span class="p">,</span><span class="w"> </span><span class="n">system_rhs</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="running-the-simulation">
+<h3>Running the Simulation<a class="headerlink" href="#running-the-simulation" title="Link a questa intestazione">#</a></h3>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">LinearElasticityParameters</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="w"> </span><span class="n">par</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">LinearElasticity</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="w">           </span><span class="n">laplace_problem_2d</span><span class="p">(</span><span class="n">par</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">laplace_problem_2d</span><span class="p">.</span><span class="n">run</span><span class="p">();</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            kernelName: "python3",
+            path: "./."
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="lab-05.html" title="precedente pagina">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">precedente</p>
+            <p class="prev-next-title">Lab 5: Improving the Poisson Solver (ParsedConvergenceTable and AffineConstraints)</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="lab-07.html" title="successivo pagina">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">successivo</p>
+        <p class="prev-next-title">Lab: Error Estimation using MeshWorker::mesh_loop</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Luca Heltai<br/>
+  
+      &copy; Copyright 2022.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

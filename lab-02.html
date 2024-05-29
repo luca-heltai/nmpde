@@ -1,0 +1,850 @@
+
+<!DOCTYPE html>
+
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Lab 2: Exploring Basis Functions in deal.II &#8212; Numerical Methods for Partial Differential Equations</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="_static/proof.css" />
+    <link rel="stylesheet" type="text/css" href="_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/clipboard.min.js"></script>
+    <script src="_static/copybutton.js"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="_static/togglebutton.js"></script>
+    <script src="_static/translations.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="_static/design-tabs.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = ".thebe,.cell"
+const thebe_selector_input = "pre"
+const thebe_selector_output = ".output, .cell_output"
+</script>
+    <script async="async" src="_static/sphinx-thebe.js"></script>
+    <link rel="index" title="Indice" href="genindex.html" />
+    <link rel="search" title="Cerca" href="search.html" />
+    <link rel="next" title="Lab: Interpolating Functions and Computing Errors in deal.II" href="lab-03.html" />
+    <link rel="prev" title="Introduction to deal.II: A Hands-On Laboratory" href="lab-01.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="it">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="_static/logo.png" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">Numerical Methods for Partial Differential Equations</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="intro.html">
+                    Introduction
+                </a>
+            </li>
+        </ul>
+        <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="syllabus.html">
+   Syllabus
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="references.html">
+   References
+  </a>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="laboratories.html">
+   Laboratories
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-01.html">
+     Introduction to deal.II: A Hands-On Laboratory
+    </a>
+   </li>
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     Lab 2: Exploring Basis Functions in deal.II
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-03.html">
+     Lab: Interpolating Functions and Computing Errors in deal.II
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-04.html">
+     Lab: Solving the Poisson Equation in deal.II
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-05.html">
+     Lab 5: Improving the Poisson Solver (ParsedConvergenceTable and AffineConstraints)
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-06.html">
+     Lab: Vector-Valued Finite Element Spaces in Linear Elasticity
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-07.html">
+     Lab: Error Estimation using MeshWorker::mesh_loop
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-08.html">
+     Lab: From CG Poisson to DG Poisson (SIPG)
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-09.html">
+     Lab: Saddle point problems: Stokes Flow around a cylinder
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="projects.html">
+   Final projects
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Powered by <a href="https://jupyterbook.org">Jupyter Book</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+<div class="menu-dropdown menu-dropdown-repository-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Source repositories">
+      <i class="fab fa-github"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="https://github.com/luca-heltai/nmpde"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="headerbtn__text-container">repository</span>
+</a>
+
+      </li>
+      
+      <li>
+        <a href="https://github.com/luca-heltai/nmpde/issues/new?title=Issue%20on%20page%20%2Flab-02.html&body=Your%20issue%20content%20here."
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Open an issue"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="headerbtn__text-container">open issue</span>
+</a>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="_sources/lab-02.md"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.md</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#degrees-of-freedom-per-object">
+   Degrees of Freedom per Object
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id1">
+     Degrees of Freedom per Object
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#examples">
+     Examples
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#importance-in-fem">
+     Importance in FEM
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#objectives">
+   Objectives
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#prerequisites">
+   Prerequisites
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#example-code">
+   Example Code
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#exercises">
+   Exercises
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-1-visualizing-basis-functions-for-different-degrees">
+     Exercise 1: Visualizing Basis Functions for Different Degrees
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-2-exploring-discontinuous-galerkin-basis-functions">
+     Exercise 2: Exploring Discontinuous Galerkin Basis Functions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-3-basis-functions-on-different-meshes">
+     Exercise 3: Basis Functions on Different Meshes
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-4-higher-order-elements-and-basis-functions">
+     Exercise 4: Higher-Order Elements and Basis Functions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-5-output-and-visualization">
+     Exercise 5: Output and Visualization
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Lab 2: Exploring Basis Functions in deal.II</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#degrees-of-freedom-per-object">
+   Degrees of Freedom per Object
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#id1">
+     Degrees of Freedom per Object
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#examples">
+     Examples
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#importance-in-fem">
+     Importance in FEM
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#objectives">
+   Objectives
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#prerequisites">
+   Prerequisites
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#example-code">
+   Example Code
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#exercises">
+   Exercises
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-1-visualizing-basis-functions-for-different-degrees">
+     Exercise 1: Visualizing Basis Functions for Different Degrees
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-2-exploring-discontinuous-galerkin-basis-functions">
+     Exercise 2: Exploring Discontinuous Galerkin Basis Functions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-3-basis-functions-on-different-meshes">
+     Exercise 3: Basis Functions on Different Meshes
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-4-higher-order-elements-and-basis-functions">
+     Exercise 4: Higher-Order Elements and Basis Functions
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-5-output-and-visualization">
+     Exercise 5: Output and Visualization
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section class="tex2jax_ignore mathjax_ignore" id="lab-2-exploring-basis-functions-in-deal-ii">
+<h1>Lab 2: Exploring Basis Functions in deal.II<a class="headerlink" href="#lab-2-exploring-basis-functions-in-deal-ii" title="Link a questa intestazione">#</a></h1>
+<p>This laboratory session is designed to help you explore the shapes of basis functions using the deal.II library. You will learn how to create and refine meshes, distribute degrees of freedom, define finite elements, and visualize the basis functions.</p>
+<section id="degrees-of-freedom-per-object">
+<h2>Degrees of Freedom per Object<a class="headerlink" href="#degrees-of-freedom-per-object" title="Link a questa intestazione">#</a></h2>
+<p>In the context of finite element methods (FEM), the term «degrees of freedom» (DoF) refers to the number of independent scalar values that are used to represent a function on a given finite element mesh. Each degree of freedom corresponds to the result of evaluating a linear functional on the mesh where the solution is approximated. The most common degrees of freedom used in FEM are function values at interpolation points (vertices, midpoint of vertices, midpoint of cells, etc.).</p>
+<section id="id1">
+<h3>Degrees of Freedom per Object<a class="headerlink" href="#id1" title="Link a questa intestazione">#</a></h3>
+<p>The concept of «degrees of freedom per object» refers to the distribution of degrees of freedom across various geometrical entities within the finite element mesh. These objects can include:</p>
+<ul class="simple">
+<li><p><strong>Vertices (Nodes):</strong> Points where elements meet. In lower-order elements, degrees of freedom are often associated with the vertices.</p></li>
+<li><p><strong>Edges:</strong> Line segments connecting vertices. Higher-order elements may have additional degrees of freedom on edges.</p></li>
+<li><p><strong>Quads/Triangles:</strong> Surfaces bounded by edges. Higher-order elements may have degrees of freedom associated with Quads or Triangles.</p></li>
+<li><p><strong>Hexes/Tets:</strong> Volumes bounded by Quads or Triangles. Higher-order elements can have degrees of freedom inside Hexes or Tets.</p></li>
+</ul>
+<p>The degrees of freedom per object vector (<code class="docutils literal notranslate"><span class="pre">dpo</span></code>) is used by <code class="docutils literal notranslate"><span class="pre">DoFHandler</span></code> to decide how to distribute degrees of freedom on a <code class="docutils literal notranslate"><span class="pre">Triangulation</span></code>. It is a <code class="docutils literal notranslate"><span class="pre">dim+1</span></code> array, where the <code class="docutils literal notranslate"><span class="pre">i</span></code>-th entry indicates the number of degrees of freedom associated to objects of dimension <code class="docutils literal notranslate"><span class="pre">i</span></code>.</p>
+</section>
+<section id="examples">
+<h3>Examples<a class="headerlink" href="#examples" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Linear Elements (P1 Elements):</strong></p>
+<ul class="simple">
+<li><p>For a 2D triangular element (triangle), linear elements have degrees of freedom only at the vertices. Each vertex of the triangle represents one degree of freedom (<code class="docutils literal notranslate"><span class="pre">dpo={1,0,0}</span></code>).</p></li>
+</ul>
+</li>
+<li><p><strong>Quadratic Elements (P2 Elements):</strong></p>
+<ul class="simple">
+<li><p>For a 2D triangular element with quadratic shape functions, degrees of freedom exist at the vertices and along the edges. This means each edge of the triangle has additional degrees of freedom, allowing the solution to be more accurately approximated (<code class="docutils literal notranslate"><span class="pre">dpo={1,1,0}</span></code>).</p></li>
+</ul>
+</li>
+<li><p><strong>Discontinuous Galerkin Elements (DG Elements):</strong></p>
+<ul class="simple">
+<li><p>In DG methods, degrees of freedom are typically associated with the interior of the element and do not need to be continuous across element boundaries. This allows for greater flexibility in handling complex boundary conditions and discontinuities (i.e., DGP(1) on triangles: (<code class="docutils literal notranslate"><span class="pre">dpo={0,0,3}</span></code>)).</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="importance-in-fem">
+<h3>Importance in FEM<a class="headerlink" href="#importance-in-fem" title="Link a questa intestazione">#</a></h3>
+<p>Understanding the distribution of degrees of freedom per object is essential for:</p>
+<ul class="simple">
+<li><p><strong>Mesh Generation and Refinement:</strong> Knowing where degrees of freedom are located helps in creating and refining meshes to better capture the solution’s behavior.</p></li>
+<li><p><strong>Solution Accuracy:</strong> More degrees of freedom generally lead to a more accurate solution, but also increase computational cost.</p></li>
+<li><p><strong>Element Selection:</strong> Different types of elements (linear, quadratic, etc.) distribute degrees of freedom differently, affecting both the accuracy and efficiency of the solution.</p></li>
+</ul>
+</section>
+</section>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link a questa intestazione">#</a></h2>
+<p>By the end of this laboratory, you should be able to:</p>
+<ol class="simple">
+<li><p>Create and refine meshes using the <code class="docutils literal notranslate"><span class="pre">Triangulation</span></code> class.</p></li>
+<li><p>Generate different types of grids using the <code class="docutils literal notranslate"><span class="pre">GridGenerator</span></code> namespace.</p></li>
+<li><p>Set up and distribute degrees of freedom using the <code class="docutils literal notranslate"><span class="pre">DoFHandler</span></code> class.</p></li>
+<li><p>Define finite elements with the <code class="docutils literal notranslate"><span class="pre">FiniteElement</span></code> class, specifically <code class="docutils literal notranslate"><span class="pre">FE_Q</span></code> and <code class="docutils literal notranslate"><span class="pre">FE_DGQ</span></code>.</p></li>
+<li><p>Output and visualize the shapes of basis functions using the <code class="docutils literal notranslate"><span class="pre">DataOut</span></code> class.</p></li>
+</ol>
+</section>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link a questa intestazione">#</a></h2>
+<p>Make sure you have the following before you start:</p>
+<ul class="simple">
+<li><p>A working installation of the deal.II library.</p></li>
+<li><p>Basic knowledge of C++.</p></li>
+</ul>
+</section>
+<section id="example-code">
+<h2>Example Code<a class="headerlink" href="#example-code" title="Link a questa intestazione">#</a></h2>
+<p>Here is a simple example to get you started. This code creates a subdivided hyper-rectangle mesh, distributes degrees of freedom, and outputs the shapes of basis functions to a VTU file.</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/base/point.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/dofs/dof_handler.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/fe/fe_dgq.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/fe/fe_q.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/grid/grid_generator.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/grid/grid_out.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/grid/tria.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/lac/vector.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/numerics/data_out.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span><span class="cp"></span>
+
+<span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">dealii</span><span class="p">;</span><span class="w"></span>
+
+<span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="c1">// Create a 2D triangulation object</span>
+<span class="w">  </span><span class="n">Triangulation</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="w"> </span><span class="n">triangulation</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Define a finite element space with polynomial degree 2</span>
+<span class="w">  </span><span class="n">FE_Q</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fe</span><span class="p">(</span><span class="mi">2</span><span class="p">);</span><span class="w"> </span><span class="c1">// dpo = {1, 1, 1}</span>
+<span class="w">  </span><span class="c1">// FE_DGQ&lt;2&gt; fe(2); // dpo = {0, 0, 9}</span>
+
+<span class="w">  </span><span class="c1">// Set up the DoF handler with the triangulation</span>
+<span class="w">  </span><span class="n">DoFHandler</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="w"> </span><span class="n">dof_handler</span><span class="p">(</span><span class="n">triangulation</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Generate a subdivided hyper-rectangle mesh</span>
+<span class="w">  </span><span class="n">GridGenerator</span><span class="o">::</span><span class="n">subdivided_hyper_rectangle</span><span class="p">(</span><span class="n">triangulation</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                            </span><span class="p">{</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">},</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">Point</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">),</span><span class="w"></span>
+<span class="w">                                            </span><span class="n">Point</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">));</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Distribute degrees of freedom among the cells</span>
+<span class="w">  </span><span class="n">dof_handler</span><span class="p">.</span><span class="n">distribute_dofs</span><span class="p">(</span><span class="n">fe</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Output the number of active cells and total cells in the triangulation</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Number of active cells: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">triangulation</span><span class="p">.</span><span class="n">n_active_cells</span><span class="p">()</span><span class="w"></span>
+<span class="w">            </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="w"></span>
+<span class="w">            </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Total number of cells: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">triangulation</span><span class="p">.</span><span class="n">n_cells</span><span class="p">()</span><span class="w"></span>
+<span class="w">            </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Output the number of degrees of freedom</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Number of degrees of freedom: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">dof_handler</span><span class="p">.</span><span class="n">n_dofs</span><span class="p">()</span><span class="w"></span>
+<span class="w">            </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Output the number of dofs per cell</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Number of dofs per cell: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">fe</span><span class="p">.</span><span class="n">dofs_per_cell</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Output the global dof indices for each cell</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">types</span><span class="o">::</span><span class="n">global_dof_index</span><span class="o">&gt;</span><span class="w"> </span><span class="n">dofs_per_cell</span><span class="p">(</span><span class="n">fe</span><span class="p">.</span><span class="n">dofs_per_cell</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cell</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">dof_handler</span><span class="p">.</span><span class="n">active_cell_iterators</span><span class="p">())</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">cell</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+<span class="w">      </span><span class="n">cell</span><span class="o">-&gt;</span><span class="n">get_dof_indices</span><span class="p">(</span><span class="n">dofs_per_cell</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">dof</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">dofs_per_cell</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">dof</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; &quot;</span><span class="p">;</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Create a DataOut object to visualize the basis functions</span>
+<span class="w">  </span><span class="n">DataOut</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="w"> </span><span class="n">data_out</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Set flags to write higher order cells</span>
+<span class="w">  </span><span class="n">DataOutBase</span><span class="o">::</span><span class="n">VtkFlags</span><span class="w"> </span><span class="n">flags</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="n">flags</span><span class="p">.</span><span class="n">write_higher_order_cells</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nb">true</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="n">data_out</span><span class="p">.</span><span class="n">set_flags</span><span class="p">(</span><span class="n">flags</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Attach the DoF handler to the DataOut object</span>
+<span class="w">  </span><span class="n">data_out</span><span class="p">.</span><span class="n">attach_dof_handler</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Create and add basis functions to the DataOut object</span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">Vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">basis_functions</span><span class="p">(</span><span class="w"></span>
+<span class="w">    </span><span class="mi">10</span><span class="p">,</span><span class="w"> </span><span class="n">Vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">.</span><span class="n">n_dofs</span><span class="p">()));</span><span class="w"></span>
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mi">10</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="n">Vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">basis_function</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">basis_functions</span><span class="p">[</span><span class="n">i</span><span class="p">];</span><span class="w"></span>
+<span class="w">      </span><span class="n">basis_function</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="w">              </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">      </span><span class="n">data_out</span><span class="p">.</span><span class="n">add_data_vector</span><span class="p">(</span><span class="n">basis_function</span><span class="p">,</span><span class="w"></span>
+<span class="w">                               </span><span class="s">&quot;basis_function_&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="n">i</span><span class="p">));</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Build patches and write the output to a VTU file</span>
+<span class="w">  </span><span class="n">data_out</span><span class="p">.</span><span class="n">build_patches</span><span class="p">(</span><span class="n">fe</span><span class="p">.</span><span class="n">degree</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">ofstream</span><span class="w"> </span><span class="n">output</span><span class="p">(</span><span class="s">&quot;solution.vtu&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">data_out</span><span class="p">.</span><span class="n">write_vtu</span><span class="p">(</span><span class="n">output</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link a questa intestazione">#</a></h2>
+<section id="exercise-1-visualizing-basis-functions-for-different-degrees">
+<h3>Exercise 1: Visualizing Basis Functions for Different Degrees<a class="headerlink" href="#exercise-1-visualizing-basis-functions-for-different-degrees" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Basis Functions for Degree 1:</strong></p>
+<ul class="simple">
+<li><p>Modify the example code to use <code class="docutils literal notranslate"><span class="pre">FE_Q&lt;2&gt;(1)</span></code> and visualize the first few basis functions.</p></li>
+<li><p>Observe and describe the shapes of the basis functions in the generated VTU files.</p></li>
+</ul>
+</li>
+<li><p><strong>Basis Functions for Higher Degrees:</strong></p>
+<ul class="simple">
+<li><p>Change the finite element to <code class="docutils literal notranslate"><span class="pre">FE_Q&lt;2&gt;(3)</span></code> and visualize the first few basis functions.</p></li>
+<li><p>Compare the shapes of the basis functions for polynomial degrees 1, 2, and 3.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="exercise-2-exploring-discontinuous-galerkin-basis-functions">
+<h3>Exercise 2: Exploring Discontinuous Galerkin Basis Functions<a class="headerlink" href="#exercise-2-exploring-discontinuous-galerkin-basis-functions" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Visualizing DG Basis Functions:</strong></p>
+<ul class="simple">
+<li><p>Replace <code class="docutils literal notranslate"><span class="pre">FE_Q</span></code> with <code class="docutils literal notranslate"><span class="pre">FE_DGQ</span></code> in the example code and visualize the basis functions.</p></li>
+<li><p>Observe how the shapes of the DG basis functions differ from the continuous basis functions.</p></li>
+</ul>
+</li>
+<li><p><strong>Comparing Continuous and Discontinuous Basis Functions:</strong></p>
+<ul class="simple">
+<li><p>Visualize and compare the basis functions for <code class="docutils literal notranslate"><span class="pre">FE_Q&lt;2&gt;(2)</span></code> and <code class="docutils literal notranslate"><span class="pre">FE_DGQ&lt;2&gt;(2)</span></code>.</p></li>
+<li><p>Describe the differences in their shapes and explain why they differ.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="exercise-3-basis-functions-on-different-meshes">
+<h3>Exercise 3: Basis Functions on Different Meshes<a class="headerlink" href="#exercise-3-basis-functions-on-different-meshes" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Hyper Shell Mesh:</strong></p>
+<ul class="simple">
+<li><p>Modify the example code to create a hyper shell mesh using <code class="docutils literal notranslate"><span class="pre">GridGenerator::hyper_shell</span></code>.</p></li>
+<li><p>Visualize the basis functions on the hyper shell mesh and describe any differences compared to the hyper-rectangle mesh.</p></li>
+</ul>
+</li>
+<li><p><strong>Adaptive Mesh Refinement:</strong></p>
+<ul class="simple">
+<li><p>Implement a strategy to refine the mesh adaptively around a specific region (e.g., near the origin).</p></li>
+<li><p>Visualize the basis functions on the adaptively refined mesh and compare them to those on a uniformly refined mesh.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="exercise-4-higher-order-elements-and-basis-functions">
+<h3>Exercise 4: Higher-Order Elements and Basis Functions<a class="headerlink" href="#exercise-4-higher-order-elements-and-basis-functions" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Using <code class="docutils literal notranslate"><span class="pre">FE_Nedelec</span></code> Elements:</strong></p>
+<ul class="simple">
+<li><p>Replace the finite element in the example code with <code class="docutils literal notranslate"><span class="pre">FE_Nedelec</span></code> and visualize the basis functions.</p></li>
+<li><p>Describe the shapes of the Nedelec basis functions and their applications.</p></li>
+</ul>
+</li>
+<li><p><strong>Using <code class="docutils literal notranslate"><span class="pre">FE_RaviartThomas</span></code> Elements:</strong></p>
+<ul class="simple">
+<li><p>Replace the finite element with <code class="docutils literal notranslate"><span class="pre">FE_RaviartThomas</span></code> and visualize the basis functions.</p></li>
+<li><p>Compare the shapes of the Raviart-Thomas basis functions with those of <code class="docutils literal notranslate"><span class="pre">FE_Q</span></code> and <code class="docutils literal notranslate"><span class="pre">FE_Nedelec</span></code>.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="exercise-5-output-and-visualization">
+<h3>Exercise 5: Output and Visualization<a class="headerlink" href="#exercise-5-output-and-visualization" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Output Grids in Different Formats:</strong></p>
+<ul class="simple">
+<li><p>Output the grid and basis functions to different formats such as <code class="docutils literal notranslate"><span class="pre">SVG</span></code>, <code class="docutils literal notranslate"><span class="pre">EPS</span></code>, and <code class="docutils literal notranslate"><span class="pre">VTK</span></code> using <code class="docutils literal notranslate"><span class="pre">GridOut</span></code> and <code class="docutils literal notranslate"><span class="pre">DataOut</span></code>.</p></li>
+<li><p>View the generated files using appropriate viewers and compare the visualizations.</p></li>
+</ul>
+</li>
+<li><p><strong>Visualizing Basis Functions in Paraview:</strong></p>
+<ul class="simple">
+<li><p>Open the VTU files in Paraview and explore the different visualization options.</p></li>
+<li><p>Create contour plots, vector field plots, and other visualizations of the basis functions.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            kernelName: "python3",
+            path: "./."
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="lab-01.html" title="precedente pagina">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">precedente</p>
+            <p class="prev-next-title">Introduction to deal.II: A Hands-On Laboratory</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="lab-03.html" title="successivo pagina">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">successivo</p>
+        <p class="prev-next-title">Lab: Interpolating Functions and Computing Errors in deal.II</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Luca Heltai<br/>
+  
+      &copy; Copyright 2022.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

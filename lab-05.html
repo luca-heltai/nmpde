@@ -1,0 +1,1188 @@
+
+<!DOCTYPE html>
+
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+    <title>Lab 5: Improving the Poisson Solver (ParsedConvergenceTable and AffineConstraints) &#8212; Numerical Methods for Partial Differential Equations</title>
+    
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+<link href="_static/styles/pydata-sphinx-theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
+
+    
+  <link rel="stylesheet"
+    href="_static/vendor/fontawesome/5.13.0/css/all.min.css">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-solid-900.woff2">
+  <link rel="preload" as="font" type="font/woff2" crossorigin
+    href="_static/vendor/fontawesome/5.13.0/webfonts/fa-brands-400.woff2">
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=5115cc725059bd94278eecd172e13a965bf8f5a9" type="text/css" />
+    <link rel="stylesheet" type="text/css" href="_static/togglebutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-thebe.css" />
+    <link rel="stylesheet" type="text/css" href="_static/proof.css" />
+    <link rel="stylesheet" type="text/css" href="_static/design-style.b7bb847fb20b106c3d81b95245e65545.min.css" />
+    
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf">
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/jquery.js"></script>
+    <script src="_static/underscore.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/clipboard.min.js"></script>
+    <script src="_static/copybutton.js"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?digest=9c920249402e914e316237a7dbc6769907cce411"></script>
+    <script>let toggleHintShow = 'Click to show';</script>
+    <script>let toggleHintHide = 'Click to hide';</script>
+    <script>let toggleOpenOnPrint = 'true';</script>
+    <script src="_static/togglebutton.js"></script>
+    <script src="_static/translations.js"></script>
+    <script>var togglebuttonSelector = '.toggle, .admonition.dropdown, .tag_hide_input div.cell_input, .tag_hide-input div.cell_input, .tag_hide_output div.cell_output, .tag_hide-output div.cell_output, .tag_hide_cell.cell, .tag_hide-cell.cell';</script>
+    <script src="_static/design-tabs.js"></script>
+    <script>const THEBE_JS_URL = "https://unpkg.com/thebe@0.8.2/lib/index.js"
+const thebe_selector = ".thebe,.cell"
+const thebe_selector_input = "pre"
+const thebe_selector_output = ".output, .cell_output"
+</script>
+    <script async="async" src="_static/sphinx-thebe.js"></script>
+    <link rel="index" title="Indice" href="genindex.html" />
+    <link rel="search" title="Cerca" href="search.html" />
+    <link rel="next" title="Lab: Vector-Valued Finite Element Spaces in Linear Elasticity" href="lab-06.html" />
+    <link rel="prev" title="Lab: Solving the Poisson Equation in deal.II" href="lab-04.html" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="docsearch:language" content="it">
+    
+
+    <!-- Google Analytics -->
+    
+  </head>
+  <body data-spy="scroll" data-target="#bd-toc-nav" data-offset="60">
+<!-- Checkboxes to toggle the left sidebar -->
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation" aria-label="Toggle navigation sidebar">
+<label class="overlay overlay-navbar" for="__navigation">
+    <div class="visually-hidden">Toggle navigation sidebar</div>
+</label>
+<!-- Checkboxes to toggle the in-page toc -->
+<input type="checkbox" class="sidebar-toggle" name="__page-toc" id="__page-toc" aria-label="Toggle in-page Table of Contents">
+<label class="overlay overlay-pagetoc" for="__page-toc">
+    <div class="visually-hidden">Toggle in-page Table of Contents</div>
+</label>
+<!-- Headers at the top -->
+<div class="announcement header-item noprint"></div>
+<div class="header header-item noprint"></div>
+
+    
+    <div class="container-fluid" id="banner"></div>
+
+    
+
+    <div class="container-xl">
+      <div class="row">
+          
+<!-- Sidebar -->
+<div class="bd-sidebar noprint" id="site-navigation">
+    <div class="bd-sidebar__content">
+        <div class="bd-sidebar__top"><div class="navbar-brand-box">
+    <a class="navbar-brand text-wrap" href="index.html">
+      
+        <!-- `logo` is deprecated in Sphinx 4.0, so remove this when we stop supporting 3 -->
+        
+      
+      
+      <img src="_static/logo.png" class="logo" alt="logo">
+      
+      
+      <h1 class="site-logo" id="site-title">Numerical Methods for Partial Differential Equations</h1>
+      
+    </a>
+</div><form class="bd-search d-flex align-items-center" action="search.html" method="get">
+  <i class="icon fas fa-search"></i>
+  <input type="search" class="form-control" name="q" id="search-input" placeholder="Search this book..." aria-label="Search this book..." autocomplete="off" >
+</form><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item active">
+        
+        <ul class="nav bd-sidenav bd-sidenav__home-link">
+            <li class="toctree-l1">
+                <a class="reference internal" href="intro.html">
+                    Introduction
+                </a>
+            </li>
+        </ul>
+        <ul class="current nav bd-sidenav">
+ <li class="toctree-l1">
+  <a class="reference internal" href="syllabus.html">
+   Syllabus
+  </a>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="references.html">
+   References
+  </a>
+ </li>
+ <li class="toctree-l1 current active has-children">
+  <a class="reference internal" href="laboratories.html">
+   Laboratories
+  </a>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <label for="toctree-checkbox-1">
+   <i class="fas fa-chevron-down">
+   </i>
+  </label>
+  <ul class="current">
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-01.html">
+     Introduction to deal.II: A Hands-On Laboratory
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-02.html">
+     Lab 2: Exploring Basis Functions in deal.II
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-03.html">
+     Lab: Interpolating Functions and Computing Errors in deal.II
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-04.html">
+     Lab: Solving the Poisson Equation in deal.II
+    </a>
+   </li>
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
+     Lab 5: Improving the Poisson Solver (ParsedConvergenceTable and AffineConstraints)
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-06.html">
+     Lab: Vector-Valued Finite Element Spaces in Linear Elasticity
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-07.html">
+     Lab: Error Estimation using MeshWorker::mesh_loop
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-08.html">
+     Lab: From CG Poisson to DG Poisson (SIPG)
+    </a>
+   </li>
+   <li class="toctree-l2">
+    <a class="reference internal" href="lab-09.html">
+     Lab: Saddle point problems: Stokes Flow around a cylinder
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toctree-l1">
+  <a class="reference internal" href="projects.html">
+   Final projects
+  </a>
+ </li>
+</ul>
+
+    </div>
+</nav></div>
+        <div class="bd-sidebar__bottom">
+             <!-- To handle the deprecated key -->
+            
+            <div class="navbar_extra_footer">
+            Powered by <a href="https://jupyterbook.org">Jupyter Book</a>
+            </div>
+            
+        </div>
+    </div>
+    <div id="rtd-footer-container"></div>
+</div>
+
+
+          
+
+
+          
+<!-- A tiny helper pixel to detect if we've scrolled -->
+<div class="sbt-scroll-pixel-helper"></div>
+<!-- Main content -->
+<div class="col py-0 content-container">
+    
+    <div class="header-article row sticky-top noprint">
+        
+
+
+
+<div class="col py-1 d-flex header-article-main">
+    <div class="header-article__left">
+        
+        <label for="__navigation"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="right"
+title="Toggle navigation"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-bars"></i>
+  </span>
+
+</label>
+
+        
+    </div>
+    <div class="header-article__right">
+<button onclick="toggleFullScreen()"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="bottom"
+title="Fullscreen mode"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+<div class="menu-dropdown menu-dropdown-repository-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Source repositories">
+      <i class="fab fa-github"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="https://github.com/luca-heltai/nmpde"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Source repository"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+<span class="headerbtn__text-container">repository</span>
+</a>
+
+      </li>
+      
+      <li>
+        <a href="https://github.com/luca-heltai/nmpde/issues/new?title=Issue%20on%20page%20%2Flab-05.html&body=Your%20issue%20content%20here."
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Open an issue"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-lightbulb"></i>
+  </span>
+<span class="headerbtn__text-container">open issue</span>
+</a>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+
+<div class="menu-dropdown menu-dropdown-download-buttons">
+  <button class="headerbtn menu-dropdown__trigger"
+      aria-label="Download this page">
+      <i class="fas fa-download"></i>
+  </button>
+  <div class="menu-dropdown__content">
+    <ul>
+      <li>
+        <a href="_sources/lab-05.md"
+   class="headerbtn"
+   data-toggle="tooltip"
+data-placement="left"
+title="Download source file"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file"></i>
+  </span>
+<span class="headerbtn__text-container">.md</span>
+</a>
+
+      </li>
+      
+      <li>
+        
+<button onclick="printPdf(this)"
+  class="headerbtn"
+  data-toggle="tooltip"
+data-placement="left"
+title="Print to PDF"
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-file-pdf"></i>
+  </span>
+<span class="headerbtn__text-container">.pdf</span>
+</button>
+
+      </li>
+      
+    </ul>
+  </div>
+</div>
+<label for="__page-toc"
+  class="headerbtn headerbtn-page-toc"
+  
+>
+  
+
+<span class="headerbtn__icon-container">
+  <i class="fas fa-list"></i>
+  </span>
+
+</label>
+
+    </div>
+</div>
+
+<!-- Table of contents -->
+<div class="col-md-3 bd-toc show noprint">
+    <div class="tocsection onthispage pt-5 pb-3">
+        <i class="fas fa-list"></i> Contents
+    </div>
+    <nav id="bd-toc-nav" aria-label="Page">
+        <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#objectives">
+   Objectives
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#example-code">
+   Example Code
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#using-parsedconvergencetable-for-convergence-analysis">
+   Using
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     ParsedConvergenceTable
+    </span>
+   </code>
+   for Convergence Analysis
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#overview">
+     Overview
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#example-usage">
+     Example Usage
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#features">
+     Features
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#parameter-configuration">
+       Parameter Configuration
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#error-computation">
+       Error Computation
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#output">
+       Output
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#using-affineconstraints-for-boundary-conditions-and-hanging-nodes">
+   Using AffineConstraints for Boundary Conditions and Hanging Nodes
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#setting-up-affineconstraints">
+     Setting Up AffineConstraints
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#comparison-with-matrixtools-apply-boundary-values">
+     Comparison with MatrixTools::apply_boundary_values
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#exercises">
+   Exercises
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-1-understanding-the-poissonparameters-class">
+     Exercise 1: Understanding the PoissonParameters Class
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-2-refining-meshes">
+     Exercise 2: Refining Meshes
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-3-convergence-rate-analysis-local-refinement-vs-global-refinement">
+     Exercise 3: Convergence Rate Analysis - Local Refinement vs. Global Refinement
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+    </nav>
+</div>
+    </div>
+    <div class="article row">
+        <div class="col pl-md-3 pl-lg-5 content-container">
+            <!-- Table of contents that is only displayed when printing the page -->
+            <div id="jb-print-docs-body" class="onlyprint">
+                <h1>Lab 5: Improving the Poisson Solver (ParsedConvergenceTable and AffineConstraints)</h1>
+                <!-- Table of contents -->
+                <div id="print-main-content">
+                    <div id="jb-print-toc">
+                        
+                        <div>
+                            <h2> Contents </h2>
+                        </div>
+                        <nav aria-label="Page">
+                            <ul class="visible nav section-nav flex-column">
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#objectives">
+   Objectives
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#example-code">
+   Example Code
+  </a>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#using-parsedconvergencetable-for-convergence-analysis">
+   Using
+   <code class="docutils literal notranslate">
+    <span class="pre">
+     ParsedConvergenceTable
+    </span>
+   </code>
+   for Convergence Analysis
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#overview">
+     Overview
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#example-usage">
+     Example Usage
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#features">
+     Features
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#parameter-configuration">
+       Parameter Configuration
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#error-computation">
+       Error Computation
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#output">
+       Output
+      </a>
+     </li>
+    </ul>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#using-affineconstraints-for-boundary-conditions-and-hanging-nodes">
+   Using AffineConstraints for Boundary Conditions and Hanging Nodes
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#setting-up-affineconstraints">
+     Setting Up AffineConstraints
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#comparison-with-matrixtools-apply-boundary-values">
+     Comparison with MatrixTools::apply_boundary_values
+    </a>
+   </li>
+  </ul>
+ </li>
+ <li class="toc-h2 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#exercises">
+   Exercises
+  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-1-understanding-the-poissonparameters-class">
+     Exercise 1: Understanding the PoissonParameters Class
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-2-refining-meshes">
+     Exercise 2: Refining Meshes
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-3-convergence-rate-analysis-local-refinement-vs-global-refinement">
+     Exercise 3: Convergence Rate Analysis - Local Refinement vs. Global Refinement
+    </a>
+   </li>
+  </ul>
+ </li>
+</ul>
+
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <main id="main-content" role="main">
+                
+              <div>
+                
+  <section class="tex2jax_ignore mathjax_ignore" id="lab-5-improving-the-poisson-solver-parsedconvergencetable-and-affineconstraints">
+<h1>Lab 5: Improving the Poisson Solver (ParsedConvergenceTable and AffineConstraints)<a class="headerlink" href="#lab-5-improving-the-poisson-solver-parsedconvergencetable-and-affineconstraints" title="Link a questa intestazione">#</a></h1>
+<p>This laboratory session is designed to help you understand how to improve the Poisson solver to analyze the convergence of your numerical solutions, and enable local refinement. You will learn how to create locally refined meshes, handle degrees of freedom with hanging nodes, and compute convergence rates.</p>
+<section id="objectives">
+<h2>Objectives<a class="headerlink" href="#objectives" title="Link a questa intestazione">#</a></h2>
+<p>By the end of this laboratory, you should be able to:</p>
+<ol class="simple">
+<li><p>Create locally refined meshes, and use hanging node constraintgs</p></li>
+<li><p>Replace <code class="docutils literal notranslate"><span class="pre">MatrixTools::apply_boundary_values</span></code> with <code class="docutils literal notranslate"><span class="pre">AffineConstraints</span></code></p></li>
+<li><p>Analyze convergence rates using the <code class="docutils literal notranslate"><span class="pre">ParsedConvergenceTable</span></code> class.</p></li>
+</ol>
+</section>
+<section id="example-code">
+<h2>Example Code<a class="headerlink" href="#example-code" title="Link a questa intestazione">#</a></h2>
+<p>Here is the example code snippet provided to you:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/base/function.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/base/function_lib.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/base/function_parser.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/base/logstream.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/base/parameter_handler.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/base/parsed_convergence_table.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/base/quadrature_lib.h&gt;</span><span class="cp"></span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/dofs/dof_handler.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/dofs/dof_tools.h&gt;</span><span class="cp"></span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/fe/fe_q.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/fe/fe_values.h&gt;</span><span class="cp"></span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/grid/grid_generator.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/grid/tria.h&gt;</span><span class="cp"></span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/lac/affine_constraints.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/lac/dynamic_sparsity_pattern.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/lac/full_matrix.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/lac/precondition.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/lac/solver_cg.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/lac/sparse_matrix.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/lac/vector.h&gt;</span><span class="cp"></span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/numerics/data_out.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/numerics/matrix_tools.h&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;deal.II/numerics/vector_tools.h&gt;</span><span class="cp"></span>
+
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;fstream&gt;</span><span class="cp"></span>
+<span class="cp">#include</span><span class="w"> </span><span class="cpf">&lt;iostream&gt;</span><span class="cp"></span>
+
+<span class="k">using</span><span class="w"> </span><span class="k">namespace</span><span class="w"> </span><span class="nn">dealii</span><span class="p">;</span><span class="w"></span>
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">dim</span><span class="o">&gt;</span><span class="w"></span>
+<span class="k">struct</span><span class="w"> </span><span class="nc">PoissonParameters</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">PoissonParameters</span><span class="p">()</span><span class="w"></span>
+<span class="w">  </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">prm</span><span class="p">.</span><span class="n">enter_subsection</span><span class="p">(</span><span class="s">&quot;Poisson parameters&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="n">prm</span><span class="p">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s">&quot;Finite element degree&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">fe_degree</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="n">prm</span><span class="p">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s">&quot;Initial refinement&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">initial_refinement</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="n">prm</span><span class="p">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s">&quot;Number of cycles&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">n_cycles</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="n">prm</span><span class="p">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s">&quot;Exact solution expression&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">exact_solution_expression</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="n">prm</span><span class="p">.</span><span class="n">add_parameter</span><span class="p">(</span><span class="s">&quot;Right hand side expression&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">rhs_expression</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">prm</span><span class="p">.</span><span class="n">leave_subsection</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="n">prm</span><span class="p">.</span><span class="n">enter_subsection</span><span class="p">(</span><span class="s">&quot;Convergence table&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">convergence_table</span><span class="p">.</span><span class="n">add_parameters</span><span class="p">(</span><span class="n">prm</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">prm</span><span class="p">.</span><span class="n">leave_subsection</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">    </span><span class="k">try</span><span class="w"></span>
+<span class="w">      </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">prm</span><span class="p">.</span><span class="n">parse_input</span><span class="p">(</span><span class="s">&quot;poisson_&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;d.prm&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="k">catch</span><span class="w"> </span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">exception</span><span class="w"> </span><span class="o">&amp;</span><span class="n">exc</span><span class="p">)</span><span class="w"></span>
+<span class="w">      </span><span class="p">{</span><span class="w"></span>
+<span class="w">        </span><span class="n">prm</span><span class="p">.</span><span class="n">print_parameters</span><span class="p">(</span><span class="s">&quot;poisson_&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;d.prm&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">        </span><span class="n">prm</span><span class="p">.</span><span class="n">parse_input</span><span class="p">(</span><span class="s">&quot;poisson_&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;d.prm&quot;</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="p">}</span><span class="w"></span>
+<span class="w">    </span><span class="n">std</span><span class="o">::</span><span class="n">map</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="p">,</span><span class="w"> </span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">constants</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">constants</span><span class="p">[</span><span class="s">&quot;pi&quot;</span><span class="p">]</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">numbers</span><span class="o">::</span><span class="n">PI</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">exact_solution</span><span class="p">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">FunctionParser</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;::</span><span class="n">default_variable_names</span><span class="p">(),</span><span class="w"></span>
+<span class="w">                              </span><span class="p">{</span><span class="n">exact_solution_expression</span><span class="p">},</span><span class="w"></span>
+<span class="w">                              </span><span class="n">constants</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">rhs_function</span><span class="p">.</span><span class="n">initialize</span><span class="p">(</span><span class="n">FunctionParser</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;::</span><span class="n">default_variable_names</span><span class="p">(),</span><span class="w"></span>
+<span class="w">                            </span><span class="p">{</span><span class="n">rhs_expression</span><span class="p">},</span><span class="w"></span>
+<span class="w">                            </span><span class="n">constants</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">fe_degree</span><span class="w">                 </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">initial_refinement</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">n_cycles</span><span class="w">                  </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w">  </span><span class="n">exact_solution_expression</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;cos(pi*x)*cos(pi*y)&quot;</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="w">  </span><span class="n">rhs_expression</span><span class="w">            </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;2*pi*pi*cos(pi*x)*cos(pi*y)&quot;</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">FunctionParser</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="n">exact_solution</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="n">FunctionParser</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="n">rhs_function</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">mutable</span><span class="w"> </span><span class="n">ParsedConvergenceTable</span><span class="w"> </span><span class="n">convergence_table</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">ParameterHandler</span><span class="w"> </span><span class="n">prm</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">dim</span><span class="o">&gt;</span><span class="w"></span>
+<span class="k">class</span><span class="w"> </span><span class="nc">Poisson</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="k">public</span><span class="o">:</span><span class="w"></span>
+<span class="w">  </span><span class="n">Poisson</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PoissonParameters</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">parameters</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="kt">void</span><span class="w"></span>
+<span class="w">  </span><span class="nf">run</span><span class="p">();</span><span class="w"></span>
+
+<span class="k">private</span><span class="o">:</span><span class="w"></span>
+<span class="w">  </span><span class="kt">void</span><span class="w"></span>
+<span class="w">  </span><span class="n">make_grid</span><span class="p">();</span><span class="w"></span>
+<span class="w">  </span><span class="kt">void</span><span class="w"></span>
+<span class="w">  </span><span class="nf">setup_system</span><span class="p">();</span><span class="w"></span>
+<span class="w">  </span><span class="kt">void</span><span class="w"></span>
+<span class="w">  </span><span class="nf">assemble_system</span><span class="p">();</span><span class="w"></span>
+<span class="w">  </span><span class="kt">void</span><span class="w"></span>
+<span class="w">  </span><span class="nf">solve</span><span class="p">();</span><span class="w"></span>
+<span class="w">  </span><span class="kt">void</span><span class="w"></span>
+<span class="w">  </span><span class="nf">output_results</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cycle</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="n">PoissonParameters</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">par</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">Triangulation</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="n">triangulation</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="n">FE_Q</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w">          </span><span class="n">fe</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="n">DoFHandler</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w">    </span><span class="n">dof_handler</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">AffineConstraints</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">constraints</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">SparsityPattern</span><span class="w">      </span><span class="n">sparsity_pattern</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="n">SparseMatrix</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">system_matrix</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">Vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">solution</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="n">Vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">system_rhs</span><span class="p">;</span><span class="w"></span>
+<span class="p">};</span><span class="w"></span>
+
+
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">dim</span><span class="o">&gt;</span><span class="w"></span>
+<span class="n">Poisson</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;::</span><span class="n">Poisson</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="n">PoissonParameters</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="o">&amp;</span><span class="n">par</span><span class="p">)</span><span class="w"></span>
+<span class="w">  </span><span class="o">:</span><span class="w"> </span><span class="n">par</span><span class="p">(</span><span class="n">par</span><span class="p">)</span><span class="w"></span>
+<span class="w">  </span><span class="p">,</span><span class="w"> </span><span class="n">fe</span><span class="p">(</span><span class="n">par</span><span class="p">.</span><span class="n">fe_degree</span><span class="p">)</span><span class="w"></span>
+<span class="w">  </span><span class="p">,</span><span class="w"> </span><span class="n">dof_handler</span><span class="p">(</span><span class="n">triangulation</span><span class="p">)</span><span class="w"></span>
+<span class="p">{}</span><span class="w"></span>
+
+
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">dim</span><span class="o">&gt;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"></span>
+<span class="n">Poisson</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;::</span><span class="n">make_grid</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">GridGenerator</span><span class="o">::</span><span class="n">hyper_cube</span><span class="p">(</span><span class="n">triangulation</span><span class="p">,</span><span class="w"> </span><span class="mi">-1</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">triangulation</span><span class="p">.</span><span class="n">refine_global</span><span class="p">(</span><span class="n">par</span><span class="p">.</span><span class="n">initial_refinement</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;   Number of active cells: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">triangulation</span><span class="p">.</span><span class="n">n_active_cells</span><span class="p">()</span><span class="w"></span>
+<span class="w">            </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="w"></span>
+<span class="w">            </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;   Total number of cells: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">triangulation</span><span class="p">.</span><span class="n">n_cells</span><span class="p">()</span><span class="w"></span>
+<span class="w">            </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">dim</span><span class="o">&gt;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"></span>
+<span class="n">Poisson</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;::</span><span class="n">setup_system</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">dof_handler</span><span class="p">.</span><span class="n">distribute_dofs</span><span class="p">(</span><span class="n">fe</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;   Number of degrees of freedom: &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">dof_handler</span><span class="p">.</span><span class="n">n_dofs</span><span class="p">()</span><span class="w"></span>
+<span class="w">            </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">constraints</span><span class="p">.</span><span class="n">clear</span><span class="p">();</span><span class="w"></span>
+<span class="w">  </span><span class="n">VectorTools</span><span class="o">::</span><span class="n">interpolate_boundary_values</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                           </span><span class="mi">0</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                           </span><span class="n">par</span><span class="p">.</span><span class="n">exact_solution</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                           </span><span class="n">constraints</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="c1">// Create hanging node constraints</span>
+<span class="w">  </span><span class="n">DoFTools</span><span class="o">::</span><span class="n">make_hanging_node_constraints</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">,</span><span class="w"> </span><span class="n">constraints</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">constraints</span><span class="p">.</span><span class="n">close</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">DynamicSparsityPattern</span><span class="w"> </span><span class="nf">dsp</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">.</span><span class="n">n_dofs</span><span class="p">());</span><span class="w"></span>
+<span class="w">  </span><span class="n">DoFTools</span><span class="o">::</span><span class="n">make_sparsity_pattern</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">,</span><span class="w"> </span><span class="n">dsp</span><span class="p">,</span><span class="w"> </span><span class="n">constraints</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">sparsity_pattern</span><span class="p">.</span><span class="n">copy_from</span><span class="p">(</span><span class="n">dsp</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">system_matrix</span><span class="p">.</span><span class="n">reinit</span><span class="p">(</span><span class="n">sparsity_pattern</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">solution</span><span class="p">.</span><span class="n">reinit</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">.</span><span class="n">n_dofs</span><span class="p">());</span><span class="w"></span>
+<span class="w">  </span><span class="n">system_rhs</span><span class="p">.</span><span class="n">reinit</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">.</span><span class="n">n_dofs</span><span class="p">());</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">dim</span><span class="o">&gt;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"></span>
+<span class="n">Poisson</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;::</span><span class="n">assemble_system</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">QGauss</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="n">quadrature_formula</span><span class="p">(</span><span class="n">fe</span><span class="p">.</span><span class="n">degree</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">FEValues</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="n">fe_values</span><span class="p">(</span><span class="n">fe</span><span class="p">,</span><span class="w"></span>
+<span class="w">                          </span><span class="n">quadrature_formula</span><span class="p">,</span><span class="w"></span>
+<span class="w">                          </span><span class="n">update_values</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">update_gradients</span><span class="w"> </span><span class="o">|</span><span class="w"></span>
+<span class="w">                            </span><span class="n">update_quadrature_points</span><span class="w"> </span><span class="o">|</span><span class="w"> </span><span class="n">update_JxW_values</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">dofs_per_cell</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fe</span><span class="p">.</span><span class="n">n_dofs_per_cell</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">FullMatrix</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w"> </span><span class="n">cell_matrix</span><span class="p">(</span><span class="n">dofs_per_cell</span><span class="p">,</span><span class="w"> </span><span class="n">dofs_per_cell</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">Vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;</span><span class="w">     </span><span class="n">cell_rhs</span><span class="p">(</span><span class="n">dofs_per_cell</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">types</span><span class="o">::</span><span class="n">global_dof_index</span><span class="o">&gt;</span><span class="w"> </span><span class="n">local_dof_indices</span><span class="p">(</span><span class="n">dofs_per_cell</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cell</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">dof_handler</span><span class="p">.</span><span class="n">active_cell_iterators</span><span class="p">())</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="n">fe_values</span><span class="p">.</span><span class="n">reinit</span><span class="p">(</span><span class="n">cell</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="n">cell_matrix</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="w">      </span><span class="n">cell_rhs</span><span class="w">    </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">      </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">q_index</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fe_values</span><span class="p">.</span><span class="n">quadrature_point_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fe_values</span><span class="p">.</span><span class="n">dof_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">          </span><span class="p">{</span><span class="w"></span>
+<span class="w">            </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">j</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">fe_values</span><span class="p">.</span><span class="n">dof_indices</span><span class="p">())</span><span class="w"></span>
+<span class="w">              </span><span class="n">cell_matrix</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">j</span><span class="p">)</span><span class="w"> </span><span class="o">+=</span><span class="w"></span>
+<span class="w">                </span><span class="p">(</span><span class="n">fe_values</span><span class="p">.</span><span class="n">shape_grad</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">q_index</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="c1">// grad phi_i(x_q)</span>
+<span class="w">                 </span><span class="n">fe_values</span><span class="p">.</span><span class="n">shape_grad</span><span class="p">(</span><span class="n">j</span><span class="p">,</span><span class="w"> </span><span class="n">q_index</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="c1">// grad phi_j(x_q)</span>
+<span class="w">                 </span><span class="n">fe_values</span><span class="p">.</span><span class="n">JxW</span><span class="p">(</span><span class="n">q_index</span><span class="p">));</span><span class="w">           </span><span class="c1">// dx</span>
+
+<span class="w">            </span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">x_q</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">fe_values</span><span class="p">.</span><span class="n">quadrature_point</span><span class="p">(</span><span class="n">q_index</span><span class="p">);</span><span class="w"></span>
+<span class="w">            </span><span class="n">cell_rhs</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="p">(</span><span class="n">fe_values</span><span class="p">.</span><span class="n">shape_value</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="n">q_index</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="c1">// phi_i(x_q)</span>
+<span class="w">                            </span><span class="n">par</span><span class="p">.</span><span class="n">rhs_function</span><span class="p">.</span><span class="n">value</span><span class="p">(</span><span class="n">x_q</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w">       </span><span class="c1">// f(x_q)</span>
+<span class="w">                            </span><span class="n">fe_values</span><span class="p">.</span><span class="n">JxW</span><span class="p">(</span><span class="n">q_index</span><span class="p">));</span><span class="w">            </span><span class="c1">// dx</span>
+<span class="w">          </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">      </span><span class="n">cell</span><span class="o">-&gt;</span><span class="n">get_dof_indices</span><span class="p">(</span><span class="n">local_dof_indices</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="n">constraints</span><span class="p">.</span><span class="n">distribute_local_to_global</span><span class="p">(</span><span class="w"></span>
+<span class="w">        </span><span class="n">cell_matrix</span><span class="p">,</span><span class="w"> </span><span class="n">cell_rhs</span><span class="p">,</span><span class="w"> </span><span class="n">local_dof_indices</span><span class="p">,</span><span class="w"> </span><span class="n">system_matrix</span><span class="p">,</span><span class="w"> </span><span class="n">system_rhs</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">dim</span><span class="o">&gt;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"></span>
+<span class="n">Poisson</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;::</span><span class="n">solve</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">SolverControl</span><span class="w">            </span><span class="nf">solver_control</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span><span class="w"> </span><span class="mf">1e-12</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">SolverCG</span><span class="o">&lt;</span><span class="n">Vector</span><span class="o">&lt;</span><span class="kt">double</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">solver</span><span class="p">(</span><span class="n">solver_control</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">solver</span><span class="p">.</span><span class="n">solve</span><span class="p">(</span><span class="n">system_matrix</span><span class="p">,</span><span class="w"> </span><span class="n">solution</span><span class="p">,</span><span class="w"> </span><span class="n">system_rhs</span><span class="p">,</span><span class="w"> </span><span class="n">PreconditionIdentity</span><span class="p">());</span><span class="w"></span>
+<span class="w">  </span><span class="n">constraints</span><span class="p">.</span><span class="n">distribute</span><span class="p">(</span><span class="n">solution</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;   &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">solver_control</span><span class="p">.</span><span class="n">last_step</span><span class="p">()</span><span class="w"></span>
+<span class="w">            </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; CG iterations needed to obtain convergence.&quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">dim</span><span class="o">&gt;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"></span>
+<span class="n">Poisson</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;::</span><span class="n">output_results</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cycle</span><span class="p">)</span><span class="w"> </span><span class="k">const</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">DataOut</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="w"> </span><span class="n">data_out</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">data_out</span><span class="p">.</span><span class="n">attach_dof_handler</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">data_out</span><span class="p">.</span><span class="n">add_data_vector</span><span class="p">(</span><span class="n">solution</span><span class="p">,</span><span class="w"> </span><span class="s">&quot;solution&quot;</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">data_out</span><span class="p">.</span><span class="n">build_patches</span><span class="p">();</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">auto</span><span class="w"> </span><span class="n">fname</span><span class="w"> </span><span class="o">=</span><span class="w"></span>
+<span class="w">    </span><span class="s">&quot;solution-&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;d_&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="n">cycle</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;.vtu&quot;</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">ofstream</span><span class="w"> </span><span class="nf">output</span><span class="p">(</span><span class="n">fname</span><span class="p">);</span><span class="w"></span>
+<span class="w">  </span><span class="n">data_out</span><span class="p">.</span><span class="n">write_vtu</span><span class="p">(</span><span class="n">output</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">static</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">vector</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">pair</span><span class="o">&lt;</span><span class="kt">double</span><span class="p">,</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;&gt;</span><span class="w"> </span><span class="n">times_and_names</span><span class="p">;</span><span class="w"></span>
+<span class="w">  </span><span class="n">times_and_names</span><span class="p">.</span><span class="n">push_back</span><span class="p">({</span><span class="n">cycle</span><span class="p">,</span><span class="w"> </span><span class="n">fname</span><span class="p">});</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">ofstream</span><span class="w"> </span><span class="n">pvd_output</span><span class="p">(</span><span class="s">&quot;solution-&quot;</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">to_string</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="s">&quot;d.pvd&quot;</span><span class="p">);</span><span class="w"></span>
+
+<span class="w">  </span><span class="n">DataOutBase</span><span class="o">::</span><span class="n">write_pvd_record</span><span class="p">(</span><span class="n">pvd_output</span><span class="p">,</span><span class="w"></span>
+
+<span class="w"> </span><span class="n">times_and_names</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+
+
+<span class="k">template</span><span class="w"> </span><span class="o">&lt;</span><span class="kt">int</span><span class="w"> </span><span class="n">dim</span><span class="o">&gt;</span><span class="w"></span>
+<span class="kt">void</span><span class="w"></span>
+<span class="n">Poisson</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;::</span><span class="n">run</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot;Solving problem in &quot;</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">dim</span><span class="w"> </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="s">&quot; space dimensions.&quot;</span><span class="w"></span>
+<span class="w">            </span><span class="o">&lt;&lt;</span><span class="w"> </span><span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cycle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">cycle</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">par</span><span class="p">.</span><span class="n">n_cycles</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">cycle</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="p">{</span><span class="w"></span>
+<span class="w">      </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cycle</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"></span>
+<span class="w">        </span><span class="n">make_grid</span><span class="p">();</span><span class="w"></span>
+<span class="w">      </span><span class="k">else</span><span class="w"></span>
+<span class="w">        </span><span class="p">{</span><span class="w"></span>
+<span class="w">          </span><span class="c1">// estimate error</span>
+<span class="w">          </span><span class="c1">// refine mesh where error is larger</span>
+<span class="w">          </span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">auto</span><span class="w"> </span><span class="o">&amp;</span><span class="n">cell</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="n">triangulation</span><span class="p">.</span><span class="n">active_cell_iterators</span><span class="p">())</span><span class="w"></span>
+<span class="w">            </span><span class="p">{</span><span class="w"></span>
+<span class="w">              </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cell</span><span class="o">-&gt;</span><span class="n">center</span><span class="p">().</span><span class="n">distance</span><span class="p">(</span><span class="n">Point</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;</span><span class="p">(</span><span class="mf">0.5</span><span class="p">,</span><span class="w"> </span><span class="mf">0.5</span><span class="p">))</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">0.25</span><span class="p">)</span><span class="w"></span>
+<span class="w">                </span><span class="n">cell</span><span class="o">-&gt;</span><span class="n">set_refine_flag</span><span class="p">();</span><span class="w"></span>
+<span class="w">            </span><span class="p">}</span><span class="w"></span>
+<span class="w">          </span><span class="n">triangulation</span><span class="p">.</span><span class="n">execute_coarsening_and_refinement</span><span class="p">();</span><span class="w"></span>
+<span class="w">        </span><span class="p">}</span><span class="w"></span>
+<span class="w">      </span><span class="n">setup_system</span><span class="p">();</span><span class="w"></span>
+<span class="w">      </span><span class="n">assemble_system</span><span class="p">();</span><span class="w"></span>
+<span class="w">      </span><span class="n">solve</span><span class="p">();</span><span class="w"></span>
+<span class="w">      </span><span class="n">output_results</span><span class="p">(</span><span class="n">cycle</span><span class="p">);</span><span class="w"></span>
+<span class="w">      </span><span class="n">par</span><span class="p">.</span><span class="n">convergence_table</span><span class="p">.</span><span class="n">error_from_exact</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                             </span><span class="n">solution</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                             </span><span class="n">par</span><span class="p">.</span><span class="n">exact_solution</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="n">par</span><span class="p">.</span><span class="n">convergence_table</span><span class="p">.</span><span class="n">output_table</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+
+
+
+<span class="kt">int</span><span class="w"></span>
+<span class="n">main</span><span class="p">()</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">PoissonParameters</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="w"> </span><span class="n">par</span><span class="p">;</span><span class="w"></span>
+<span class="w">    </span><span class="n">Poisson</span><span class="o">&lt;</span><span class="mi">2</span><span class="o">&gt;</span><span class="w">           </span><span class="n">laplace_problem_2d</span><span class="p">(</span><span class="n">par</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span><span class="n">laplace_problem_2d</span><span class="p">.</span><span class="n">run</span><span class="p">();</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+
+<span class="w">  </span><span class="k">return</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+</pre></div>
+</div>
+</section>
+<section id="using-parsedconvergencetable-for-convergence-analysis">
+<h2>Using <code class="docutils literal notranslate"><span class="pre">ParsedConvergenceTable</span></code> for Convergence Analysis<a class="headerlink" href="#using-parsedconvergencetable-for-convergence-analysis" title="Link a questa intestazione">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">ParsedConvergenceTable</span></code> class in deal.II simplifies the creation and management of convergence tables. This class reads options for generating convergence tables from a parameter file and provides methods to compute errors using reference exact solutions, differences between numerical solutions, or custom error computations via <code class="docutils literal notranslate"><span class="pre">std::function</span></code> objects.</p>
+<section id="overview">
+<h3>Overview<a class="headerlink" href="#overview" title="Link a questa intestazione">#</a></h3>
+<p>Here is a brief overview of the main features and usage of <code class="docutils literal notranslate"><span class="pre">ParsedConvergenceTable</span></code>:</p>
+<ol class="simple">
+<li><p><strong>Adding Parameters:</strong></p>
+<ul class="simple">
+<li><p>The class adds necessary parameters to a <code class="docutils literal notranslate"><span class="pre">ParameterHandler</span></code> object, allowing configuration via a parameter file.</p></li>
+</ul>
+</li>
+<li><p><strong>Computing Errors:</strong></p>
+<ul class="simple">
+<li><p>Methods like <code class="docutils literal notranslate"><span class="pre">error_from_exact()</span></code> and <code class="docutils literal notranslate"><span class="pre">difference()</span></code> can be used to compute various norms of the error.</p></li>
+</ul>
+</li>
+<li><p><strong>Outputting the Table:</strong></p>
+<ul class="simple">
+<li><p>The final convergence table can be outputted to a stream or a file.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="example-usage">
+<h3>Example Usage<a class="headerlink" href="#example-usage" title="Link a questa intestazione">#</a></h3>
+<p>The following example demonstrates a typical usage of <code class="docutils literal notranslate"><span class="pre">ParsedConvergenceTable</span></code>:</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="n">ParsedConvergenceTable</span><span class="w"> </span><span class="n">table</span><span class="p">;</span><span class="w"></span>
+<span class="n">ParameterHandler</span><span class="w"> </span><span class="n">prm</span><span class="p">;</span><span class="w"></span>
+<span class="n">table</span><span class="p">.</span><span class="n">add_parameters</span><span class="p">(</span><span class="n">prm</span><span class="p">);</span><span class="w"></span>
+
+<span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">n_cycles</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">i</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="c1">// ... perform computations for the i-th cycle</span>
+<span class="w">  </span><span class="n">table</span><span class="p">.</span><span class="n">error_from_exact</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">,</span><span class="w"> </span><span class="n">solution</span><span class="p">,</span><span class="w"> </span><span class="n">exact_solution</span><span class="p">);</span><span class="w"></span>
+<span class="p">}</span><span class="w"></span>
+<span class="n">table</span><span class="p">.</span><span class="n">output_table</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">cout</span><span class="p">);</span><span class="w"></span>
+</pre></div>
+</div>
+<p>In this example:</p>
+<ul class="simple">
+<li><p>A <code class="docutils literal notranslate"><span class="pre">ParsedConvergenceTable</span></code> object is created.</p></li>
+<li><p>Parameters are added to a <code class="docutils literal notranslate"><span class="pre">ParameterHandler</span></code>.</p></li>
+<li><p>Errors are computed for each cycle using <code class="docutils literal notranslate"><span class="pre">error_from_exact()</span></code>.</p></li>
+<li><p>The convergence table is outputted to the console.</p></li>
+</ul>
+</section>
+<section id="features">
+<h3>Features<a class="headerlink" href="#features" title="Link a questa intestazione">#</a></h3>
+<section id="parameter-configuration">
+<h4>Parameter Configuration<a class="headerlink" href="#parameter-configuration" title="Link a questa intestazione">#</a></h4>
+<p>By calling <code class="docutils literal notranslate"><span class="pre">add_parameters()</span></code> and passing a <code class="docutils literal notranslate"><span class="pre">ParameterHandler</span></code> object, several options are defined, which can be modified at runtime through a parameter file:</p>
+<div class="highlight-plaintext notranslate"><div class="highlight"><pre><span></span>set Enable computation of the errors = true
+set Error file name                  =
+set Error precision                  = 3
+set Exponent for p-norms             = 2
+set Extra columns                    = dofs, cells
+set List of error norms to compute   = Linfty_norm, L2_norm, H1_norm
+set Rate key                         = dofs
+set Rate mode                        = reduction_rate_log2
+</pre></div>
+</div>
+<p>These parameters control the computation and output of the convergence table.</p>
+</section>
+<section id="error-computation">
+<h4>Error Computation<a class="headerlink" href="#error-computation" title="Link a questa intestazione">#</a></h4>
+<p>Whenever <code class="docutils literal notranslate"><span class="pre">error_from_exact()</span></code> or <code class="docutils literal notranslate"><span class="pre">difference()</span></code> is called, the class:</p>
+<ul class="simple">
+<li><p>Inspects its parameters.</p></li>
+<li><p>Computes all specified norms.</p></li>
+<li><p>Computes any extra columns defined via <code class="docutils literal notranslate"><span class="pre">add_extra_column()</span></code>.</p></li>
+<li><p>Writes one row of the convergence table.</p></li>
+</ul>
+</section>
+<section id="output">
+<h4>Output<a class="headerlink" href="#output" title="Link a questa intestazione">#</a></h4>
+<p>The convergence table can be outputted using <code class="docutils literal notranslate"><span class="pre">output_table()</span></code>:</p>
+<ul class="simple">
+<li><p>To a stream (e.g., <code class="docutils literal notranslate"><span class="pre">std::cout</span></code>).</p></li>
+<li><p>To a file specified in the parameter file.</p></li>
+</ul>
+</section>
+</section>
+</section>
+<section id="using-affineconstraints-for-boundary-conditions-and-hanging-nodes">
+<h2>Using AffineConstraints for Boundary Conditions and Hanging Nodes<a class="headerlink" href="#using-affineconstraints-for-boundary-conditions-and-hanging-nodes" title="Link a questa intestazione">#</a></h2>
+<p>In deal.II, boundary conditions and constraints for hanging nodes can be handled more flexibly using <code class="docutils literal notranslate"><span class="pre">AffineConstraints&lt;double&gt;</span></code> instead of <code class="docutils literal notranslate"><span class="pre">MatrixTools::apply_boundary_values</span></code>. The <code class="docutils literal notranslate"><span class="pre">AffineConstraints</span></code> class allows you to manage multiple types of constraints in a unified way.</p>
+<section id="setting-up-affineconstraints">
+<h3>Setting Up AffineConstraints<a class="headerlink" href="#setting-up-affineconstraints" title="Link a questa intestazione">#</a></h3>
+<p>To replace <code class="docutils literal notranslate"><span class="pre">MatrixTools::apply_boundary_values</span></code> with <code class="docutils literal notranslate"><span class="pre">AffineConstraints&lt;double&gt;</span></code>, follow these steps:</p>
+<ol class="simple">
+<li><p><strong>Clear and Initialize Constraints:</strong>
+Clear any existing constraints and set up the boundary values and hanging nodes constraints using <code class="docutils literal notranslate"><span class="pre">AffineConstraints&lt;double&gt;</span></code>.</p></li>
+<li><p><strong>Distribute Local to Global:</strong>
+Use the <code class="docutils literal notranslate"><span class="pre">distribute_local_to_global</span></code> method of <code class="docutils literal notranslate"><span class="pre">AffineConstraints&lt;double&gt;</span></code> during the assembly of the system matrix and right-hand side vector.</p></li>
+<li><p><strong>Distribute Solution:</strong>
+After solving the linear system, use <code class="docutils literal notranslate"><span class="pre">AffineConstraints&lt;double&gt;</span></code> to apply the constraints to the solution vector.</p></li>
+</ol>
+</section>
+<section id="comparison-with-matrixtools-apply-boundary-values">
+<h3>Comparison with MatrixTools::apply_boundary_values<a class="headerlink" href="#comparison-with-matrixtools-apply-boundary-values" title="Link a questa intestazione">#</a></h3>
+<p>Using <code class="docutils literal notranslate"><span class="pre">AffineConstraints</span></code> has several advantages over <code class="docutils literal notranslate"><span class="pre">MatrixTools::apply_boundary_values</span></code>:</p>
+<ul class="simple">
+<li><p><strong>Flexibility:</strong> <code class="docutils literal notranslate"><span class="pre">AffineConstraints</span></code> can handle multiple types of constraints (e.g., boundary values, hanging nodes) in a unified manner.</p></li>
+<li><p><strong>Simplicity:</strong> The constraints are applied automatically during the assembly and solution phases, reducing the need for additional function calls.</p></li>
+<li><p><strong>Efficiency:</strong> The constraints are incorporated directly into the system matrix and right-hand side vector, during the assembly time, eliminating the cost of applying algebraic constraints as a post-processing steps of linear algebra objects.</p></li>
+</ul>
+</section>
+</section>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link a questa intestazione">#</a></h2>
+<section id="exercise-1-understanding-the-poissonparameters-class">
+<h3>Exercise 1: Understanding the PoissonParameters Class<a class="headerlink" href="#exercise-1-understanding-the-poissonparameters-class" title="Link a questa intestazione">#</a></h3>
+<ol>
+<li><p><strong>Parameter File:</strong></p>
+<ul>
+<li><p>Create a parameter file named <code class="docutils literal notranslate"><span class="pre">poisson_2d.prm</span></code> with the following contents:</p>
+<div class="highlight-plaintext notranslate"><div class="highlight"><pre><span></span>subsection Poisson parameters
+  set Finite element degree = 1
+  set Initial refinement = 3
+  set Number of cycles = 5
+  set Exact solution expression = cos(pi*x)*cos(pi*y)
+  set Right hand side expression = 2*pi*pi*cos(pi*x)*cos(pi*y)
+end
+
+subsection Convergence table
+  set Enable computation of the errors = true
+  set Error file name                  = errors.txt
+  set Error precision                  = 3
+  set Exponent for p-norms             = 2
+  set Extra columns                    = dofs, cells
+  set List of error norms to compute   = Linfty_norm, L2_norm, H1_norm
+  set Rate key                         = dofs
+  set Rate mode                        = reduction_rate_log2
+end
+</pre></div>
+</div>
+</li>
+<li><p>Ensure this file is in the same directory as your executable.</p></li>
+</ul>
+</li>
+<li><p><strong>Modify Parameters:</strong></p>
+<ul class="simple">
+<li><p>Change the <code class="docutils literal notranslate"><span class="pre">Finite</span> <span class="pre">element</span> <span class="pre">degree</span></code> and <code class="docutils literal notranslate"><span class="pre">Initial</span> <span class="pre">refinement</span></code> parameters in the parameter file and observe how they affect the solution and convergence.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="exercise-2-refining-meshes">
+<h3>Exercise 2: Refining Meshes<a class="headerlink" href="#exercise-2-refining-meshes" title="Link a questa intestazione">#</a></h3>
+<ol>
+<li><p><strong>Local Refinement:</strong></p>
+<ul>
+<li><p>Modify the parameter file to add parameters controlling local refinement:</p>
+<div class="highlight-plaintext notranslate"><div class="highlight"><pre><span></span>subsection Local refinement
+  set Refinement fraction = 0.3
+  set Coarsening fraction = 0.0
+  set Minimum grid level = 3
+  set Maximum grid level = 7
+end
+</pre></div>
+</div>
+</li>
+<li><p>Implement local mesh refinement using Kelly error estimator, replace the current placeholder for mesh refinement with</p>
+<div class="highlight-cpp notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">unsigned</span><span class="w"> </span><span class="kt">int</span><span class="w"> </span><span class="n">cycle</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span><span class="p">;</span><span class="w"> </span><span class="n">cycle</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">par</span><span class="p">.</span><span class="n">n_cycles</span><span class="p">;</span><span class="w"> </span><span class="o">++</span><span class="n">cycle</span><span class="p">)</span><span class="w"></span>
+<span class="p">{</span><span class="w"></span>
+<span class="w">  </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="n">cycle</span><span class="w"> </span><span class="o">==</span><span class="w"> </span><span class="mi">0</span><span class="p">)</span><span class="w"></span>
+<span class="w">    </span><span class="n">make_grid</span><span class="p">();</span><span class="w"></span>
+<span class="w">  </span><span class="k">else</span><span class="w"></span>
+<span class="w">  </span><span class="p">{</span><span class="w"></span>
+<span class="w">    </span><span class="n">Vector</span><span class="o">&lt;</span><span class="kt">float</span><span class="o">&gt;</span><span class="w"> </span><span class="n">estimated_error_per_cell</span><span class="p">(</span><span class="n">triangulation</span><span class="p">.</span><span class="n">n_active_cells</span><span class="p">());</span><span class="w"></span>
+<span class="w">    </span><span class="n">KellyErrorEstimator</span><span class="o">&lt;</span><span class="n">dim</span><span class="o">&gt;::</span><span class="n">estimate</span><span class="p">(</span><span class="n">dof_handler</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                       </span><span class="n">QGauss</span><span class="o">&lt;</span><span class="n">dim</span><span class="mi">-1</span><span class="o">&gt;</span><span class="p">(</span><span class="n">fe</span><span class="p">.</span><span class="n">degree</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">),</span><span class="w"></span>
+<span class="w">                                       </span><span class="p">{},</span><span class="w"></span>
+<span class="w">                                       </span><span class="n">solution</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                       </span><span class="n">estimated_error_per_cell</span><span class="p">);</span><span class="w"></span>
+<span class="w">    </span>
+<span class="w">    </span><span class="n">GridRefinement</span><span class="o">::</span><span class="n">refine_and_coarsen_fixed_fraction</span><span class="p">(</span><span class="n">triangulation</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                      </span><span class="n">estimated_error_per_cell</span><span class="p">,</span><span class="w"></span>
+<span class="w">                                                      </span><span class="mf">0.3</span><span class="p">,</span><span class="w"> </span><span class="c1">// Refinement fraction from parameter file</span>
+<span class="w">                                                      </span><span class="mf">0.0</span><span class="p">);</span><span class="w"> </span><span class="c1">// Coarsening fraction from parameter file</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="n">triangulation</span><span class="p">.</span><span class="n">execute_coarsening_and_refinement</span><span class="p">();</span><span class="w"></span>
+<span class="w">  </span><span class="p">}</span><span class="w"></span>
+<span class="w">  </span><span class="p">...</span><span class="w"></span>
+</pre></div>
+</div>
+</li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="exercise-3-convergence-rate-analysis-local-refinement-vs-global-refinement">
+<h3>Exercise 3: Convergence Rate Analysis - Local Refinement vs. Global Refinement<a class="headerlink" href="#exercise-3-convergence-rate-analysis-local-refinement-vs-global-refinement" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p>Create two parameter files, one for global refinement (<code class="docutils literal notranslate"><span class="pre">global_refinement.prm</span></code>, i.e., setting refinement fraction to <code class="docutils literal notranslate"><span class="pre">1.0</span></code>) and one for local refinement (<code class="docutils literal notranslate"><span class="pre">local_refinement.prm</span></code>), choosing the coefficients such that the total number of degrees of freedom in the final step is the same for the two cases (i.e., more cycles in the local refinement case, tuning the top fraction parameter)</p></li>
+<li><p>Analyse the two error tables. What can you say about the final error in the two cases? Which one works better?</p></li>
+<li><p>Analyse the convergence rate in the two cases w.r.t. the number of degrees of freedom. What powers do you see for the error decay in the two cases, in L2 and H1?</p></li>
+<li><p>Do the same for degree 2. What powers do you see now?</p></li>
+</ol>
+</section>
+</section>
+</section>
+
+    <script type="text/x-thebe-config">
+    {
+        requestKernel: true,
+        binderOptions: {
+            repo: "binder-examples/jupyter-stacks-datascience",
+            ref: "master",
+        },
+        codeMirrorConfig: {
+            theme: "abcdef",
+            mode: "python"
+        },
+        kernelOptions: {
+            kernelName: "python3",
+            path: "./."
+        },
+        predefinedOutput: true
+    }
+    </script>
+    <script>kernelName = 'python3'</script>
+
+              </div>
+              
+            </main>
+            <footer class="footer-article noprint">
+                
+    <!-- Previous / next buttons -->
+<div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="lab-04.html" title="precedente pagina">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">precedente</p>
+            <p class="prev-next-title">Lab: Solving the Poisson Equation in deal.II</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="lab-06.html" title="successivo pagina">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">successivo</p>
+        <p class="prev-next-title">Lab: Vector-Valued Finite Element Spaces in Linear Elasticity</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
+</div>
+            </footer>
+        </div>
+    </div>
+    <div class="footer-content row">
+        <footer class="col footer"><p>
+  
+    By Luca Heltai<br/>
+  
+      &copy; Copyright 2022.<br/>
+</p>
+        </footer>
+    </div>
+    
+</div>
+
+
+      </div>
+    </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/pydata-sphinx-theme.js?digest=1999514e3f237ded88cf"></script>
+
+
+  </body>
+</html>

@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Markdown Files &#8212; Numerical Methods for Partial Differential Equations</title>
+    <title>Lab: Error Estimation using MeshWorker::mesh_loop &#8212; Numerical Methods for Partial Differential Equations</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -54,6 +54,8 @@ const thebe_selector_output = ".output, .cell_output"
     <script async="async" src="_static/sphinx-thebe.js"></script>
     <link rel="index" title="Indice" href="genindex.html" />
     <link rel="search" title="Cerca" href="search.html" />
+    <link rel="next" title="Lab: From CG Poisson to DG Poisson (SIPG)" href="lab-08.html" />
+    <link rel="prev" title="Lab: Vector-Valued Finite Element Spaces in Linear Elasticity" href="lab-06.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="it">
     
@@ -113,7 +115,7 @@ const thebe_selector_output = ".output, .cell_output"
                 </a>
             </li>
         </ul>
-        <ul class="nav bd-sidenav">
+        <ul class="current nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="syllabus.html">
    Syllabus
@@ -124,16 +126,16 @@ const thebe_selector_output = ".output, .cell_output"
    References
   </a>
  </li>
- <li class="toctree-l1 has-children">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="laboratories.html">
    Laboratories
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
+  <ul class="current">
    <li class="toctree-l2">
     <a class="reference internal" href="lab-01.html">
      Introduction to deal.II: A Hands-On Laboratory
@@ -164,8 +166,8 @@ const thebe_selector_output = ".output, .cell_output"
      Lab: Vector-Valued Finite Element Spaces in Linear Elasticity
     </a>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="lab-07.html">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
      Lab: Error Estimation using MeshWorker::mesh_loop
     </a>
    </li>
@@ -276,7 +278,7 @@ title="Source repository"
       </li>
       
       <li>
-        <a href="https://github.com/luca-heltai/nmpde/issues/new?title=Issue%20on%20page%20%2Fmarkdown.html&body=Your%20issue%20content%20here."
+        <a href="https://github.com/luca-heltai/nmpde/issues/new?title=Issue%20on%20page%20%2Flab-07.html&body=Your%20issue%20content%20here."
    class="headerbtn"
    data-toggle="tooltip"
 data-placement="left"
@@ -304,7 +306,7 @@ title="Open an issue"
   <div class="menu-dropdown__content">
     <ul>
       <li>
-        <a href="_sources/markdown.md"
+        <a href="_sources/lab-07.md"
    class="headerbtn"
    data-toggle="tooltip"
 data-placement="left"
@@ -364,24 +366,52 @@ title="Print to PDF"
     <nav id="bd-toc-nav" aria-label="Page">
         <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#what-is-myst">
-   What is MyST?
+  <a class="reference internal nav-link" href="#overview">
+   Overview
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#sample-roles-and-directives">
-   Sample Roles and Directives
+  <a class="reference internal nav-link" href="#exercise-implementing-advanced-error-estimator">
+   Exercise: Implementing Advanced Error Estimator
   </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#citations">
-   Citations
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#learn-more">
-   Learn more
-  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#starting-point">
+     Starting Point
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#key-concepts">
+     Key Concepts
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#steps">
+     Steps
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#explanation-using-meshworker-mesh-loop-for-error-estimation">
+     Explanation: Using
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       MeshWorker::mesh_loop
+      </span>
+     </code>
+     for Error Estimation
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#additional-exercise-advanced-error-estimation-with-meshworker-mesh-loop">
+     Additional Exercise: Advanced Error Estimation with
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       MeshWorker::mesh_loop
+      </span>
+     </code>
+    </a>
+   </li>
+  </ul>
  </li>
 </ul>
 
@@ -392,7 +422,7 @@ title="Print to PDF"
         <div class="col pl-md-3 pl-lg-5 content-container">
             <!-- Table of contents that is only displayed when printing the page -->
             <div id="jb-print-docs-body" class="onlyprint">
-                <h1>Markdown Files</h1>
+                <h1>Lab: Error Estimation using MeshWorker::mesh_loop</h1>
                 <!-- Table of contents -->
                 <div id="print-main-content">
                     <div id="jb-print-toc">
@@ -403,24 +433,52 @@ title="Print to PDF"
                         <nav aria-label="Page">
                             <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#what-is-myst">
-   What is MyST?
+  <a class="reference internal nav-link" href="#overview">
+   Overview
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#sample-roles-and-directives">
-   Sample Roles and Directives
+  <a class="reference internal nav-link" href="#exercise-implementing-advanced-error-estimator">
+   Exercise: Implementing Advanced Error Estimator
   </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#citations">
-   Citations
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#learn-more">
-   Learn more
-  </a>
+  <ul class="nav section-nav flex-column">
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#starting-point">
+     Starting Point
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#key-concepts">
+     Key Concepts
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#steps">
+     Steps
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#explanation-using-meshworker-mesh-loop-for-error-estimation">
+     Explanation: Using
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       MeshWorker::mesh_loop
+      </span>
+     </code>
+     for Error Estimation
+    </a>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#additional-exercise-advanced-error-estimation-with-meshworker-mesh-loop">
+     Additional Exercise: Advanced Error Estimation with
+     <code class="docutils literal notranslate">
+      <span class="pre">
+       MeshWorker::mesh_loop
+      </span>
+     </code>
+    </a>
+   </li>
+  </ul>
  </li>
 </ul>
 
@@ -432,70 +490,116 @@ title="Print to PDF"
                 
               <div>
                 
-  <section class="tex2jax_ignore mathjax_ignore" id="markdown-files">
-<h1>Markdown Files<a class="headerlink" href="#markdown-files" title="Link a questa intestazione">#</a></h1>
-<p>Whether you write your book’s content in Jupyter Notebooks (<code class="docutils literal notranslate"><span class="pre">.ipynb</span></code>) or
-in regular markdown files (<code class="docutils literal notranslate"><span class="pre">.md</span></code>), you’ll write in the same flavor of markdown
-called <strong>MyST Markdown</strong>.
-This is a simple file to help you get started and show off some syntax.</p>
-<section id="what-is-myst">
-<h2>What is MyST?<a class="headerlink" href="#what-is-myst" title="Link a questa intestazione">#</a></h2>
-<p>MyST stands for «Markedly Structured Text». It
-is a slight variation on a flavor of markdown called «CommonMark» markdown,
-with small syntax extensions to allow you to write <strong>roles</strong> and <strong>directives</strong>
-in the Sphinx ecosystem.</p>
-<p>For more about MyST, see <a class="reference external" href="https://jupyterbook.org/content/myst.html">the MyST Markdown Overview</a>.</p>
+  <section class="tex2jax_ignore mathjax_ignore" id="lab-error-estimation-using-meshworker-mesh-loop">
+<h1>Lab: Error Estimation using MeshWorker::mesh_loop<a class="headerlink" href="#lab-error-estimation-using-meshworker-mesh-loop" title="Link a questa intestazione">#</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link a questa intestazione">#</a></h2>
+<p>In this lab, you will extend the work from Lab 5 to implement the theoretical error estimator and use it for adaptive mesh refinement. You will use <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> to efficiently assemble the error estimator and handle face integrals, especially when dealing with hanging nodes. This exercise will help you understand how to integrate face terms and apply adaptive refinement based on error estimates.</p>
 </section>
-<section id="sample-roles-and-directives">
-<h2>Sample Roles and Directives<a class="headerlink" href="#sample-roles-and-directives" title="Link a questa intestazione">#</a></h2>
-<p>Roles and directives are two of the most powerful tools in Jupyter Book. They
-are kind of like functions, but written in a markup language. They both
-serve a similar purpose, but <strong>roles are written in one line</strong>, whereas
-<strong>directives span many lines</strong>. They both accept different kinds of inputs,
-and what they do with those inputs depends on the specific role or directive
-that is being called.</p>
-<p>Here is a «note» directive:</p>
-<div class="admonition note">
-<p class="admonition-title">Nota</p>
-<p>Here is a note</p>
-</div>
-<p>It will be rendered in a special box when you build your book.</p>
-<p>Here is an inline directive to refer to a document: <a class="reference internal" href="markdown-notebooks.html"><span class="doc">Notebooks with MyST Markdown</span></a>.</p>
+<section id="exercise-implementing-advanced-error-estimator">
+<h2>Exercise: Implementing Advanced Error Estimator<a class="headerlink" href="#exercise-implementing-advanced-error-estimator" title="Link a questa intestazione">#</a></h2>
+<p>The goal of this exercise is to use <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> to assemble the error estimator defined in class:</p>
+<p>[
+\eta_T = h_T | f + \Delta u_h |<em>{L^2(T)} + \sum</em>{F \in \partial T} \frac12 h_F^{1/2} | [\nabla u_h] |_{L^2(F)}
+]</p>
+<section id="starting-point">
+<h3>Starting Point<a class="headerlink" href="#starting-point" title="Link a questa intestazione">#</a></h3>
+<p>Start from the provided <code class="docutils literal notranslate"><span class="pre">experiments.cc</span></code> file, which demonstrates the use of <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> to compute face integrals. Your task is to integrate this approach into the error estimation for the Poisson problem.</p>
 </section>
-<section id="citations">
-<h2>Citations<a class="headerlink" href="#citations" title="Link a questa intestazione">#</a></h2>
-<p>You can also cite references that are stored in a <code class="docutils literal notranslate"><span class="pre">bibtex</span></code> file. For example,
-the following syntax: <code class="docutils literal notranslate"><span class="pre">{cite}`holdgraf_evidence_2014`</span></code> will render like
-this: <span id="id1">[]</span>.</p>
-<p>Moreover, you can insert a bibliography into your page with this syntax:
-The <code class="docutils literal notranslate"><span class="pre">{bibliography}</span></code> directive must be used for all the <code class="docutils literal notranslate"><span class="pre">{cite}</span></code> roles to
-render properly.
-For example, if the references for your book are stored in <code class="docutils literal notranslate"><span class="pre">references.bib</span></code>,
-then the bibliography is inserted with:</p>
-<div class="docutils container" id="id2">
-<dl class="citation">
-<dt class="label" id="id4"><span class="brackets">BBF13</span></dt>
-<dd><p>Daniele Boffi, Franco Brezzi, and Michel Fortin. <em>Mixed Finite Element Methods and Applications</em>. Volume 44 of Springer Series in Computational Mathematics. Springer Berlin Heidelberg, Berlin, Heidelberg, 2013. ISBN 978-3-642-36518-8 978-3-642-36519-5. URL: <a class="reference external" href="http://link.springer.com/10.1007/978-3-642-36519-5">http://link.springer.com/10.1007/978-3-642-36519-5</a>, <a class="reference external" href="https://doi.org/10.1007/978-3-642-36519-5">doi:10.1007/978-3-642-36519-5</a>.</p>
-</dd>
-<dt class="label" id="id3"><span class="brackets">BS10</span></dt>
-<dd><p>Susanne C. Brenner and L. Ridgway Scott. <em>The mathematical theory of finite element methods</em>. Number 15 in Texts in applied mathematics. Springer, New York, NY, 3. ed. edition, 2010. ISBN 978-0-387-75933-3 978-1-4419-2611-1.</p>
-</dd>
-<dt class="label" id="id6"><span class="brackets">Cia78</span></dt>
-<dd><p>Philippe Gaston Ciarlet. <em>The finite element method for elliptic problems</em>. Number v. 4 in Studies in mathematics and its applications. North-Holland Pub. Co. Sole distributors for the U.S.A. and Canada, Elsevier North-Holland, Amsterdam New York, 1978. ISBN 978-0-444-85028-7.</p>
-</dd>
-<dt class="label" id="id5"><span class="brackets">EG04</span></dt>
-<dd><p>Alexandre Ern and Jean-Luc Guermond. <em>Theory and Practice of Finite Elements</em>. Volume 159 of Applied Mathematical Sciences. Springer New York, New York, NY, 2004. ISBN 978-1-4419-1918-2 978-1-4757-4355-5. URL: <a class="reference external" href="http://link.springer.com/10.1007/978-1-4757-4355-5">http://link.springer.com/10.1007/978-1-4757-4355-5</a>, <a class="reference external" href="https://doi.org/10.1007/978-1-4757-4355-5">doi:10.1007/978-1-4757-4355-5</a>.</p>
-</dd>
-<dt class="label" id="id7"><span class="brackets">QV94</span></dt>
-<dd><p>Alfio Quarteroni and Alberto Valli. <em>Numerical Approximation of Partial Differential Equations</em>. Scientific Computation. Clarendon Press, Philadelphia, 1994. ISBN 978-0-19-852448-2.</p>
-</dd>
-</dl>
-</div>
+<section id="key-concepts">
+<h3>Key Concepts<a class="headerlink" href="#key-concepts" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>MeshWorker::mesh_loop</strong>:</p>
+<ul class="simple">
+<li><p>This function simplifies the loop over cells and faces, allowing you to define custom cell and face integrals efficiently.</p></li>
+</ul>
+</li>
+<li><p><strong>Error Estimator</strong>:</p>
+<ul class="simple">
+<li><p>Implement an error estimator that combines volume and face terms, especially useful for adaptive refinement.</p></li>
+</ul>
+</li>
+<li><p><strong>Handling Hanging Nodes</strong>:</p>
+<ul class="simple">
+<li><p>Properly integrate face terms in the presence of hanging nodes using <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code>.</p></li>
+</ul>
+</li>
+</ol>
 </section>
-<section id="learn-more">
-<h2>Learn more<a class="headerlink" href="#learn-more" title="Link a questa intestazione">#</a></h2>
-<p>This is just a simple starter to get you started.
-You can learn a lot more at <a class="reference external" href="https://jupyterbook.org">jupyterbook.org</a>.</p>
+<section id="steps">
+<h3>Steps<a class="headerlink" href="#steps" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Define the Error Estimator</strong>:</p>
+<ul class="simple">
+<li><p>Implement the error estimator using <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> based on the definition provided in class.</p></li>
+</ul>
+</li>
+<li><p><strong>Integrate Face Terms</strong>:</p>
+<ul class="simple">
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> to compute face terms, ensuring correct handling of hanging nodes.</p></li>
+</ul>
+</li>
+<li><p><strong>Adaptive Refinement</strong>:</p>
+<ul class="simple">
+<li><p>Use the error estimates to mark and refine the mesh adaptively.</p></li>
+</ul>
+</li>
+</ol>
+</section>
+<section id="explanation-using-meshworker-mesh-loop-for-error-estimation">
+<h3>Explanation: Using <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> for Error Estimation<a class="headerlink" href="#explanation-using-meshworker-mesh-loop-for-error-estimation" title="Link a questa intestazione">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> is used to handle the assembly of both cell and face integrals efficiently, especially when dealing with hanging nodes. Here are the key steps involved:</p>
+<ol class="simple">
+<li><p><strong>Define Scratch and Copy Data</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MeshWorker::ScratchData</span></code> is used to store intermediate data during the loop over cells and faces.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">MeshWorker::CopyData</span></code> is used to store the local contributions that will be copied to the global system.</p></li>
+</ul>
+</li>
+<li><p><strong>Cell Worker Function</strong>:</p>
+<ul class="simple">
+<li><p>This function assembles the cell integrals by looping over the quadrature points and shape functions.</p></li>
+</ul>
+</li>
+<li><p><strong>Face Worker Function</strong>:</p>
+<ul class="simple">
+<li><p>This function assembles the face integrals, which are important for computing the jump terms in the error estimator.</p></li>
+</ul>
+</li>
+<li><p><strong>Copier Function</strong>:</p>
+<ul class="simple">
+<li><p>This function copies the local contributions to the global system, applying constraints as needed.</p></li>
+</ul>
+</li>
+<li><p><strong>Run the Mesh Loop</strong>:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> is called with the defined worker and copier functions to perform the assembly.</p></li>
+</ul>
+</li>
+</ol>
+<p>By following these steps and using <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code>, you can efficiently assemble the error estimator and handle complex mesh configurations with hanging nodes. This approach simplifies the implementation and ensures accurate computation of both cell and face terms in the error estimator.</p>
+</section>
+<section id="additional-exercise-advanced-error-estimation-with-meshworker-mesh-loop">
+<h3>Additional Exercise: Advanced Error Estimation with <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code><a class="headerlink" href="#additional-exercise-advanced-error-estimation-with-meshworker-mesh-loop" title="Link a questa intestazione">#</a></h3>
+<ol class="simple">
+<li><p><strong>Implement the Error Estimator</strong>:</p>
+<ul class="simple">
+<li><p>Extend the <code class="docutils literal notranslate"><span class="pre">estimate</span></code> method to fully implement the advanced error estimator using <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code>.</p></li>
+</ul>
+</li>
+<li><p><strong>Integrate with Adaptive Refinement</strong>:</p>
+<ul class="simple">
+<li><p>Use the computed error estimates to mark cells for refinement and perform adaptive mesh refinement.</p></li>
+</ul>
+</li>
+<li><p><strong>Analyze Results</strong>:</p>
+<ul class="simple">
+<li><p>Compare the results of adaptive refinement with uniform refinement, and analyze the efficiency and accuracy of the solution.</p></li>
+<li><p>Compare your error estimator with the Kelly error estimator. Do you see any noticeable differences?</p></li>
+</ul>
+</li>
+</ol>
+</section>
 </section>
 </section>
 
@@ -526,6 +630,20 @@ You can learn a lot more at <a class="reference external" href="https://jupyterb
                 
     <!-- Previous / next buttons -->
 <div class='prev-next-area'>
+    <a class='left-prev' id="prev-link" href="lab-06.html" title="precedente pagina">
+        <i class="fas fa-angle-left"></i>
+        <div class="prev-next-info">
+            <p class="prev-next-subtitle">precedente</p>
+            <p class="prev-next-title">Lab: Vector-Valued Finite Element Spaces in Linear Elasticity</p>
+        </div>
+    </a>
+    <a class='right-next' id="next-link" href="lab-08.html" title="successivo pagina">
+    <div class="prev-next-info">
+        <p class="prev-next-subtitle">successivo</p>
+        <p class="prev-next-title">Lab: From CG Poisson to DG Poisson (SIPG)</p>
+    </div>
+    <i class="fas fa-angle-right"></i>
+    </a>
 </div>
             </footer>
         </div>

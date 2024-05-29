@@ -6,7 +6,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
-    <title>Syllabus &#8212; Numerical Methods for Partial Differential Equations</title>
+    <title>Lab: From CG Poisson to DG Poisson (SIPG) &#8212; Numerical Methods for Partial Differential Equations</title>
     
   <!-- Loaded before other Sphinx assets -->
   <link href="_static/styles/theme.css?digest=1999514e3f237ded88cf" rel="stylesheet">
@@ -52,10 +52,12 @@ const thebe_selector_input = "pre"
 const thebe_selector_output = ".output, .cell_output"
 </script>
     <script async="async" src="_static/sphinx-thebe.js"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <link rel="index" title="Indice" href="genindex.html" />
     <link rel="search" title="Cerca" href="search.html" />
-    <link rel="next" title="References" href="references.html" />
-    <link rel="prev" title="Introduction" href="intro.html" />
+    <link rel="next" title="Lab: Saddle point problems: Stokes Flow around a cylinder" href="lab-09.html" />
+    <link rel="prev" title="Lab: Error Estimation using MeshWorker::mesh_loop" href="lab-07.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="it">
     
@@ -116,8 +118,8 @@ const thebe_selector_output = ".output, .cell_output"
             </li>
         </ul>
         <ul class="current nav bd-sidenav">
- <li class="toctree-l1 current active">
-  <a class="current reference internal" href="#">
+ <li class="toctree-l1">
+  <a class="reference internal" href="syllabus.html">
    Syllabus
   </a>
  </li>
@@ -126,16 +128,16 @@ const thebe_selector_output = ".output, .cell_output"
    References
   </a>
  </li>
- <li class="toctree-l1 has-children">
+ <li class="toctree-l1 current active has-children">
   <a class="reference internal" href="laboratories.html">
    Laboratories
   </a>
-  <input class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
+  <input checked="" class="toctree-checkbox" id="toctree-checkbox-1" name="toctree-checkbox-1" type="checkbox"/>
   <label for="toctree-checkbox-1">
    <i class="fas fa-chevron-down">
    </i>
   </label>
-  <ul>
+  <ul class="current">
    <li class="toctree-l2">
     <a class="reference internal" href="lab-01.html">
      Introduction to deal.II: A Hands-On Laboratory
@@ -171,8 +173,8 @@ const thebe_selector_output = ".output, .cell_output"
      Lab: Error Estimation using MeshWorker::mesh_loop
     </a>
    </li>
-   <li class="toctree-l2">
-    <a class="reference internal" href="lab-08.html">
+   <li class="toctree-l2 current active">
+    <a class="current reference internal" href="#">
      Lab: From CG Poisson to DG Poisson (SIPG)
     </a>
    </li>
@@ -278,7 +280,7 @@ title="Source repository"
       </li>
       
       <li>
-        <a href="https://github.com/luca-heltai/nmpde/issues/new?title=Issue%20on%20page%20%2Fsyllabus.html&body=Your%20issue%20content%20here."
+        <a href="https://github.com/luca-heltai/nmpde/issues/new?title=Issue%20on%20page%20%2Flab-08.html&body=Your%20issue%20content%20here."
    class="headerbtn"
    data-toggle="tooltip"
 data-placement="left"
@@ -306,7 +308,7 @@ title="Open an issue"
   <div class="menu-dropdown__content">
     <ul>
       <li>
-        <a href="_sources/syllabus.md"
+        <a href="_sources/lab-08.md"
    class="headerbtn"
    data-toggle="tooltip"
 data-placement="left"
@@ -366,79 +368,65 @@ title="Print to PDF"
     <nav id="bd-toc-nav" aria-label="Page">
         <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#preliminaries">
-   Preliminaries
+  <a class="reference internal nav-link" href="#overview">
+   Overview
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#weak-formulations-and-well-posedness">
-   Weak Formulations and Well-Posedness
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#introduction-to-finite-elements">
-   Introduction to Finite Elements
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#inverse-and-functional-inequalities">
-   Inverse and Functional Inequalities
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#a-priori-error-analysis">
-   A priori Error Analysis
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#stabilization-mechanisms">
-   Stabilization Mechanisms
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#a-posteriori-error-analysis-and-adaptivity">
-   A-posteriori Error Analysis and Adaptivity
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#variational-crimes">
-   Variational Crimes
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#discontinuous-galerkin">
-   Discontinuous Galerkin
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#abstract-saddle-point-problems">
-   Abstract Saddle Point Problems
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#darcy-and-stokes">
-   Darcy and Stokes
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#projects-and-seminars">
-   Projects and Seminars
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#course-features">
-   Course Features
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#assessment">
-   Assessment
+  <a class="reference internal nav-link" href="#exercises">
+   Exercises
   </a>
   <ul class="nav section-nav flex-column">
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#learning-outcomes">
-     Learning Outcomes
+    <a class="reference internal nav-link" href="#exercise-1-replacing-the-manually-written-assemble-loop-with-meshworker-mesh-loop">
+     Exercise 1: Replacing the Manually Written Assemble Loop with MeshWorker::mesh_loop
     </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#objective">
+       Objective
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#steps">
+       Steps
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-2-add-boundary-contributions-to-assemble-boundary-terms-using-nitsche-method">
+     Exercise 2: Add Boundary Contributions to assemble boundary terms Using Nitsche Method
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#id1">
+       Objective
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#id2">
+       Steps
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-3-add-face-contributions-to-the-loop-for-sipg-method">
+     Exercise 3: Add Face Contributions to the Loop for SIPG Method
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#id3">
+       Objective
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#id4">
+       Steps
+      </a>
+     </li>
+    </ul>
    </li>
   </ul>
  </li>
@@ -451,7 +439,7 @@ title="Print to PDF"
         <div class="col pl-md-3 pl-lg-5 content-container">
             <!-- Table of contents that is only displayed when printing the page -->
             <div id="jb-print-docs-body" class="onlyprint">
-                <h1>Syllabus</h1>
+                <h1>Lab: From CG Poisson to DG Poisson (SIPG)</h1>
                 <!-- Table of contents -->
                 <div id="print-main-content">
                     <div id="jb-print-toc">
@@ -462,79 +450,65 @@ title="Print to PDF"
                         <nav aria-label="Page">
                             <ul class="visible nav section-nav flex-column">
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#preliminaries">
-   Preliminaries
+  <a class="reference internal nav-link" href="#overview">
+   Overview
   </a>
  </li>
  <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#weak-formulations-and-well-posedness">
-   Weak Formulations and Well-Posedness
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#introduction-to-finite-elements">
-   Introduction to Finite Elements
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#inverse-and-functional-inequalities">
-   Inverse and Functional Inequalities
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#a-priori-error-analysis">
-   A priori Error Analysis
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#stabilization-mechanisms">
-   Stabilization Mechanisms
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#a-posteriori-error-analysis-and-adaptivity">
-   A-posteriori Error Analysis and Adaptivity
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#variational-crimes">
-   Variational Crimes
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#discontinuous-galerkin">
-   Discontinuous Galerkin
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#abstract-saddle-point-problems">
-   Abstract Saddle Point Problems
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#darcy-and-stokes">
-   Darcy and Stokes
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#projects-and-seminars">
-   Projects and Seminars
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#course-features">
-   Course Features
-  </a>
- </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#assessment">
-   Assessment
+  <a class="reference internal nav-link" href="#exercises">
+   Exercises
   </a>
   <ul class="nav section-nav flex-column">
    <li class="toc-h3 nav-item toc-entry">
-    <a class="reference internal nav-link" href="#learning-outcomes">
-     Learning Outcomes
+    <a class="reference internal nav-link" href="#exercise-1-replacing-the-manually-written-assemble-loop-with-meshworker-mesh-loop">
+     Exercise 1: Replacing the Manually Written Assemble Loop with MeshWorker::mesh_loop
     </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#objective">
+       Objective
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#steps">
+       Steps
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-2-add-boundary-contributions-to-assemble-boundary-terms-using-nitsche-method">
+     Exercise 2: Add Boundary Contributions to assemble boundary terms Using Nitsche Method
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#id1">
+       Objective
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#id2">
+       Steps
+      </a>
+     </li>
+    </ul>
+   </li>
+   <li class="toc-h3 nav-item toc-entry">
+    <a class="reference internal nav-link" href="#exercise-3-add-face-contributions-to-the-loop-for-sipg-method">
+     Exercise 3: Add Face Contributions to the Loop for SIPG Method
+    </a>
+    <ul class="nav section-nav flex-column">
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#id3">
+       Objective
+      </a>
+     </li>
+     <li class="toc-h4 nav-item toc-entry">
+      <a class="reference internal nav-link" href="#id4">
+       Steps
+      </a>
+     </li>
+    </ul>
    </li>
   </ul>
  </li>
@@ -548,101 +522,117 @@ title="Print to PDF"
                 
               <div>
                 
-  <section class="tex2jax_ignore mathjax_ignore" id="syllabus">
-<h1>Syllabus<a class="headerlink" href="#syllabus" title="Link a questa intestazione">#</a></h1>
-<section id="preliminaries">
-<h2>Preliminaries<a class="headerlink" href="#preliminaries" title="Link a questa intestazione">#</a></h2>
-<ul class="simple">
-<li><p><strong>Recap on Elements of Functional Analysis</strong>: Introduction to Lebesgue Spaces, Sobolev Spaces, and key inequalities. Applied examples demonstrating their relevance in solving real-world problems.</p></li>
-<li><p><strong>Recap on Elements of Numerical Analysis</strong>: Basics of interpolation, quadrature, tensorization, and their importance in FEM. Introduction to meshes and linear algebra essentials for FEM.</p></li>
-</ul>
+  <section class="tex2jax_ignore mathjax_ignore" id="lab-from-cg-poisson-to-dg-poisson-sipg">
+<h1>Lab: From CG Poisson to DG Poisson (SIPG)<a class="headerlink" href="#lab-from-cg-poisson-to-dg-poisson-sipg" title="Link a questa intestazione">#</a></h1>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link a questa intestazione">#</a></h2>
+<p>In this lab, you will use <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> to efficiently assemble the system matrix and right-hand side, handle boundary contributions using the Nitsche method, and implement face contributions to assemble the Symmetric Interior Penalty Galerkin (SIPG) method. This exercise will help you understand how to integrate cell and face terms and apply adaptive refinement based on error estimates.</p>
 </section>
-<section id="weak-formulations-and-well-posedness">
-<h2>Weak Formulations and Well-Posedness<a class="headerlink" href="#weak-formulations-and-well-posedness" title="Link a questa intestazione">#</a></h2>
-<ul class="simple">
-<li><p><strong>Continuous Properties</strong>: Weak Formulation of Model Problems, Lax–Milgram Lemma and Banach–Nečas–Babuška (BNB) Theorem.</p></li>
-<li><p><strong>Galerkin Approximation</strong>: Understanding discrete well-posedness, Cèa’s Lemma, and basic error estimates.</p></li>
-</ul>
+<section id="exercises">
+<h2>Exercises<a class="headerlink" href="#exercises" title="Link a questa intestazione">#</a></h2>
+<section id="exercise-1-replacing-the-manually-written-assemble-loop-with-meshworker-mesh-loop">
+<h3>Exercise 1: Replacing the Manually Written Assemble Loop with MeshWorker::mesh_loop<a class="headerlink" href="#exercise-1-replacing-the-manually-written-assemble-loop-with-meshworker-mesh-loop" title="Link a questa intestazione">#</a></h3>
+<section id="objective">
+<h4>Objective<a class="headerlink" href="#objective" title="Link a questa intestazione">#</a></h4>
+<p>Replace the manually written assemble loop with <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> to handle the assembly process more efficiently.</p>
 </section>
-<section id="introduction-to-finite-elements">
-<h2>Introduction to Finite Elements<a class="headerlink" href="#introduction-to-finite-elements" title="Link a questa intestazione">#</a></h2>
+<section id="steps">
+<h4>Steps<a class="headerlink" href="#steps" title="Link a questa intestazione">#</a></h4>
+<ol class="simple">
+<li><p><strong>Setup Scratch and Copy Data:</strong></p>
 <ul class="simple">
-<li><p><strong>Local Finite Elements</strong>: Detailed study of finite elements as triples and quadruples, shape-regularity for affine meshes, and practical workshops using FEM software.</p></li>
-<li><p><strong>Finite Element Interpolation</strong>: Deny-Lion Lemma, Bramble–Hilbert Lemmas and interpolation errors, including software implementation sessions.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">MeshWorker::ScratchData</span></code> and <code class="docutils literal notranslate"><span class="pre">MeshWorker::CopyData</span></code> structures to store intermediate data during the loop over cells and faces.</p></li>
 </ul>
+</li>
+<li><p><strong>Define Cell Worker Function:</strong></p>
+<ul class="simple">
+<li><p>Create a cell worker function that assembles the local system matrix and right-hand side for CG methods.</p></li>
+</ul>
+</li>
+<li><p><strong>Define Copier Function:</strong></p>
+<ul class="simple">
+<li><p>Create a copier function to transfer local contributions to the global system.</p></li>
+</ul>
+</li>
+<li><p><strong>Run Mesh Loop:</strong></p>
+<ul class="simple">
+<li><p>Replace the manual assembly loop with <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> using the defined worker and copier functions.</p></li>
+</ul>
+</li>
+</ol>
 </section>
-<section id="inverse-and-functional-inequalities">
-<h2>Inverse and Functional Inequalities<a class="headerlink" href="#inverse-and-functional-inequalities" title="Link a questa intestazione">#</a></h2>
-<ul class="simple">
-<li><p><strong>Local and Global Inequalities</strong>: inverse inequalities in cells and on faces, understanding broken spaces, jumps, and functional inequalities in meshes.</p></li>
-</ul>
 </section>
-<section id="a-priori-error-analysis">
-<h2>A priori Error Analysis<a class="headerlink" href="#a-priori-error-analysis" title="Link a questa intestazione">#</a></h2>
-<ul class="simple">
-<li><p><strong>Model Problem and Error Analysis</strong>: Elliptic problems with Dirichlet/Robin/Neumann boundary conditions, elliptic regularity, and error analysis in (H^1) and (L^2).</p></li>
-</ul>
+<section id="exercise-2-add-boundary-contributions-to-assemble-boundary-terms-using-nitsche-method">
+<h3>Exercise 2: Add Boundary Contributions to assemble boundary terms Using Nitsche Method<a class="headerlink" href="#exercise-2-add-boundary-contributions-to-assemble-boundary-terms-using-nitsche-method" title="Link a questa intestazione">#</a></h3>
+<section id="id1">
+<h4>Objective<a class="headerlink" href="#id1" title="Link a questa intestazione">#</a></h4>
+<p>Incorporate boundary contributions using the Nitsche method for weakly imposing Dirichlet boundary conditions.</p>
 </section>
-<section id="stabilization-mechanisms">
-<h2>Stabilization Mechanisms<a class="headerlink" href="#stabilization-mechanisms" title="Link a questa intestazione">#</a></h2>
+<section id="id2">
+<h4>Steps<a class="headerlink" href="#id2" title="Link a questa intestazione">#</a></h4>
+<ol>
+<li><p><strong>Setup Face Scratch Data:</strong></p>
 <ul class="simple">
-<li><p><strong>Diffusion-Transport-Reaction Equations</strong>: well-posedness, streamline diffusion, GLS, and SUPG, illustrating their necessity and effectiveness.</p></li>
+<li><p>Initialize <code class="docutils literal notranslate"><span class="pre">MeshWorker::ScratchData</span></code> to include face integration rules and update flags for boundary terms.</p></li>
 </ul>
+</li>
+<li><p><strong>Define Boundary Face Worker Function:</strong></p>
+<ul class="simple">
+<li><p>Create a boundary face worker function that assembles the boundary contributions using the Nitsche method. Remember, for CG with imposition of boundary conditions with constraints, the weak form looks like</p></li>
+</ul>
+<div class="math notranslate nohighlight">
+\[
+   (\nabla u, \nabla v) = (f,v) \qquad \forall v \in V
+   \]</div>
+<p>while for CG with Nitsche boundary conditions, the weak form looks like:</p>
+<div class="math notranslate nohighlight">
+\[
+   (\nabla u, \nabla v) - &lt;n\cdot \nabla u, v&gt;  - &lt;u, n\cdot \nabla v&gt; +\frac{\gamma}{h}&lt;u,v&gt; = (f,v)
+   - &lt;g, n\cdot \nabla v&gt; + \frac{\gamma}{h}&lt;g,v&gt;
+   \qquad \forall v \in V
+   \]</div>
+<p>where we indicate with <span class="math notranslate nohighlight">\((\cdot, \cdot)\)</span> the <span class="math notranslate nohighlight">\(L^2\)</span> scalar product in <span class="math notranslate nohighlight">\(\Omega\)</span> and with <span class="math notranslate nohighlight">\(&lt;\cdot, \cdot&gt;\)</span> the <span class="math notranslate nohighlight">\(L^2\)</span> scalar product on the Dirichlet part of the boundary <span class="math notranslate nohighlight">\(\partial \Omega_D\)</span>.</p>
+</li>
+<li><p><strong>Run Mesh Loop:</strong></p>
+<ul class="simple">
+<li><p>Extend <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> to include the boundary face worker function for boundary term assembly.</p></li>
+</ul>
+</li>
+</ol>
 </section>
-<section id="a-posteriori-error-analysis-and-adaptivity">
-<h2>A-posteriori Error Analysis and Adaptivity<a class="headerlink" href="#a-posteriori-error-analysis-and-adaptivity" title="Link a questa intestazione">#</a></h2>
-<ul class="simple">
-<li><p><strong>Error Estimation and Adaptivity</strong>: Implementing adaptive mesh refinement strategies based on a-posteriori error estimates in programming assignments.</p></li>
-</ul>
 </section>
-<section id="variational-crimes">
-<h2>Variational Crimes<a class="headerlink" href="#variational-crimes" title="Link a questa intestazione">#</a></h2>
-<ul class="simple">
-<li><p><strong>Error Analysis for Variational Crimes</strong>: Analysis of numerical integration effects and Strang’s Lemmas</p></li>
-</ul>
+<section id="exercise-3-add-face-contributions-to-the-loop-for-sipg-method">
+<h3>Exercise 3: Add Face Contributions to the Loop for SIPG Method<a class="headerlink" href="#exercise-3-add-face-contributions-to-the-loop-for-sipg-method" title="Link a questa intestazione">#</a></h3>
+<section id="id3">
+<h4>Objective<a class="headerlink" href="#id3" title="Link a questa intestazione">#</a></h4>
+<p>Extend the assembly process to include face contributions for the Symmetric Interior Penalty Galerkin (SIPG) method (to read more, take a look at step-12 of the deal.II library).</p>
+<p>Remember: SIPG is an extension of the Nitsche method implemented above with the addition of the following face terms:</p>
+<div class="math notranslate nohighlight">
+\[
+- &lt;\{\!\{\nabla u\}\!\}, [\![v]\!]&gt;_{\mathcal E^0} - &lt;[\![u]\!], \{\!\{\nabla v\}\!\}&gt;_{\mathcal E^0} +\frac{\gamma}{h}&lt;[\![u]\!],[\![v]\!]&gt;_{\mathcal E^0}
+\]</div>
+<p>where we indicate with <span class="math notranslate nohighlight">\(\mathcal E^0\)</span> the set of the interior faces, and with <span class="math notranslate nohighlight">\(&lt;\cdot, \cdot&gt;\)</span> the <span class="math notranslate nohighlight">\(L^2\)</span> scalar product on the co-dimension one faces.</p>
 </section>
-<section id="discontinuous-galerkin">
-<h2>Discontinuous Galerkin<a class="headerlink" href="#discontinuous-galerkin" title="Link a questa intestazione">#</a></h2>
+<section id="id4">
+<h4>Steps<a class="headerlink" href="#id4" title="Link a questa intestazione">#</a></h4>
+<ol class="simple">
+<li><p><strong>Setup Face Scratch Data:</strong></p>
 <ul class="simple">
-<li><p><strong>Nitsche’s Method and SIP</strong>: discontinuous Galerkin methods, stability, well-posedness, and error analysis.</p></li>
+<li><p>Extend <code class="docutils literal notranslate"><span class="pre">MeshWorker::ScratchData</span></code> to include face integration rules and update flags for face terms.</p></li>
 </ul>
+</li>
+<li><p><strong>Define Interior Face Worker Function:</strong></p>
+<ul class="simple">
+<li><p>Create an interior face worker function that assembles the SIPG contributions for the interior faces.</p></li>
+</ul>
+</li>
+<li><p><strong>Run Mesh Loop:</strong></p>
+<ul class="simple">
+<li><p>Extend <code class="docutils literal notranslate"><span class="pre">MeshWorker::mesh_loop</span></code> to include the interior face worker function for SIPG term assembly.</p></li>
+</ul>
+</li>
+</ol>
 </section>
-<section id="abstract-saddle-point-problems">
-<h2>Abstract Saddle Point Problems<a class="headerlink" href="#abstract-saddle-point-problems" title="Link a questa intestazione">#</a></h2>
-<ul class="simple">
-<li><p><strong>Saddle Point Problems and Mixed Finite Element Approximation</strong>: Babuška–Brezzi Theorem, mixed formulations, and mixed finite element approximations.</p></li>
-</ul>
-</section>
-<section id="darcy-and-stokes">
-<h2>Darcy and Stokes<a class="headerlink" href="#darcy-and-stokes" title="Link a questa intestazione">#</a></h2>
-<ul class="simple">
-<li><p><strong>Application Modules</strong>: Specialized modules on Darcy and Stokes equations, focusing on mixed formulations, (H(div)) finite elements, and stable pairs for Stokes equations, culminating in a collaborative project.</p></li>
-</ul>
-</section>
-<section id="projects-and-seminars">
-<h2>Projects and Seminars<a class="headerlink" href="#projects-and-seminars" title="Link a questa intestazione">#</a></h2>
-<ul class="simple">
-<li><p><strong>Students presentations</strong>: Software projects (possibly in groups), seminars, and presentations from students.</p></li>
-</ul>
-</section>
-<section id="course-features">
-<h2>Course Features<a class="headerlink" href="#course-features" title="Link a questa intestazione">#</a></h2>
-<ul class="simple">
-<li><p><strong>Flipped Classrooms and Laboratories</strong>: For practical sessions on Python and C++ implementations.</p></li>
-<li><p><strong>Peer Review Sessions</strong>: Encourages collaborative learning and exposure to diverse problem-solving techniques.</p></li>
-<li><p><strong>Update and Feedback Mechanisms</strong>: Incorporates the latest research developments and adjusts content based on student feedback.</p></li>
-</ul>
-</section>
-<section id="assessment">
-<h2>Assessment<a class="headerlink" href="#assessment" title="Link a questa intestazione">#</a></h2>
-<ul class="simple">
-<li><p><strong>Projects</strong>: Real-world problem solving using FEM.</p></li>
-<li><p><strong>Practical Implementations</strong>: Software-based assignments.</p></li>
-<li><p><strong>Final Exam</strong>: Covers theoretical and practical aspects of the course. It includes an oral examination (mandatory), possibly a software project, or a seminar on a topic to be discussed with the teacher.</p></li>
-</ul>
-<section id="learning-outcomes">
-<h3>Learning Outcomes<a class="headerlink" href="#learning-outcomes" title="Link a questa intestazione">#</a></h3>
-<p>Upon completion, students will have an advanced understanding of FEM for solving PDEs, capable of applying this knowledge to complex problems across various domains, and proficient in using FEM software and programming languages for numerical analysis.</p>
 </section>
 </section>
 </section>
@@ -674,17 +664,17 @@ title="Print to PDF"
                 
     <!-- Previous / next buttons -->
 <div class='prev-next-area'>
-    <a class='left-prev' id="prev-link" href="intro.html" title="precedente pagina">
+    <a class='left-prev' id="prev-link" href="lab-07.html" title="precedente pagina">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">precedente</p>
-            <p class="prev-next-title">Introduction</p>
+            <p class="prev-next-title">Lab: Error Estimation using MeshWorker::mesh_loop</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="references.html" title="successivo pagina">
+    <a class='right-next' id="next-link" href="lab-09.html" title="successivo pagina">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">successivo</p>
-        <p class="prev-next-title">References</p>
+        <p class="prev-next-title">Lab: Saddle point problems: Stokes Flow around a cylinder</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>
