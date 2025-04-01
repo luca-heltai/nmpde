@@ -53,6 +53,7 @@ struct PoissonParameters
       prm.add_parameter("Refinement top fraction", refinement_top_fraction);
       prm.add_parameter("Refinement bottom fraction",
                         refinement_bottom_fraction);
+      prm.add_parameter("Gamma", gamma);
     }
     prm.leave_subsection();
 
@@ -86,6 +87,7 @@ struct PoissonParameters
 
   double refinement_top_fraction    = .3;
   double refinement_bottom_fraction = 0.0;
+  double gamma                      = 1.0;
 
   FunctionParser<dim> exact_solution;
   FunctionParser<dim> rhs_function;
@@ -310,10 +312,10 @@ Poisson<dim>::setup_system()
             << std::endl;
 
   constraints.clear();
-  VectorTools::interpolate_boundary_values(dof_handler,
-                                           0,
-                                           par.exact_solution,
-                                           constraints);
+  // VectorTools::interpolate_boundary_values(dof_handler,
+  //                                          0,
+  //                                          par.exact_solution,
+  //                                          constraints);
 
   // Create hanging node constraints
   DoFTools::make_hanging_node_constraints(dof_handler, constraints);
@@ -337,64 +339,110 @@ template <int dim>
 void
 Poisson<dim>::assemble_system()
 {
-  QGauss<dim> quadrature_formula(fe.degree + 1);
+  MeshWorker::ScratchData<dim> scratch_data(fe,
+                                            QGauss<dim>(fe.degree + 1),
+                                            update_values | update_gradients |
+                                              update_quadrature_points |
+                                              update_JxW_values,
+                                            QGauss<dim - 1>(fe.degree + 1),
+                                            update_values | update_gradients |
+                                              update_quadrature_points |
+                                              update_normal_vectors |
+                                              update_JxW_values);
 
-  FEValues<dim> fe_values(fe,
-                          quadrature_formula,
-                          update_values | update_gradients |
-                            update_quadrature_points | update_JxW_values);
+  MeshWorker::CopyData<> copy_data(fe.dofs_per_cell);
 
-  const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
+  auto cell_worker = [&](const auto &cell, auto &scratch, auto &copy) {
+    const auto &fe_values         = scratch.reinit(cell);
+    auto       &cell_matrix       = copy.matrices[0];
+    auto       &cell_rhs          = copy.vectors[0];
+    auto       &local_dof_indices = copy.local_dof_indices[0];
 
-  FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
-  Vector<double>     cell_rhs(dofs_per_cell);
+    cell_matrix = 0;
+    cell_rhs    = 0;
 
-  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+    for (const unsigned int q_index : fe_values.quadrature_point_indices())
+      for (const unsigned int i : fe_values.dof_indices())
+        {
+          for (const unsigned int j : fe_values.dof_indices())
+            cell_matrix(i, j) +=
+              (fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
+               fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
+               fe_values.JxW(q_index));           // dx
 
-  for (const auto &cell : dof_handler.active_cell_iterators())
-    {
-      fe_values.reinit(cell);
-      cell_matrix = 0;
-      cell_rhs    = 0;
+          const auto &x_q = fe_values.quadrature_point(q_index);
+          cell_rhs(i) += (fe_values.shape_value(i, q_index) * // phi_i(x_q)
+                          par.rhs_function.value(x_q) *       // f(x_q)
+                          fe_values.JxW(q_index));            // dx
+        }
+
+    cell->get_dof_indices(local_dof_indices);
+  };
+
+  auto boundary_worker =
+    [&](const auto &cell, auto f, auto &scratch, auto &copy) {
+      const auto &fe_values   = scratch.reinit(cell, f);
+      auto       &cell_matrix = copy.matrices[0];
+      auto       &cell_rhs    = copy.vectors[0];
 
       for (const unsigned int q_index : fe_values.quadrature_point_indices())
-        for (const unsigned int i : fe_values.dof_indices())
-          {
-            for (const unsigned int j : fe_values.dof_indices())
-              cell_matrix(i, j) +=
-                (fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
-                 fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
-                 fe_values.JxW(q_index));           // dx
+        {
+          const auto  n   = fe_values.normal_vector(q_index);
+          const auto &x_q = fe_values.quadrature_point(q_index);
 
-            const auto &x_q = fe_values.quadrature_point(q_index);
-            cell_rhs(i) += (fe_values.shape_value(i, q_index) * // phi_i(x_q)
-                            par.rhs_function.value(x_q) *       // f(x_q)
-                            fe_values.JxW(q_index));            // dx
-          }
+          for (const unsigned int i : fe_values.dof_indices())
+            {
+              for (const unsigned int j : fe_values.dof_indices())
+                cell_matrix(i, j) += ((-fe_values.shape_value(i, q_index) *
+                                         fe_values.shape_grad(j, q_index) * n -
+                                       fe_values.shape_value(j, q_index) *
+                                         fe_values.shape_grad(i, q_index) * n +
+                                       par.gamma / cell->face(f)->diameter() *
+                                         fe_values.shape_value(i, q_index) *
+                                         fe_values.shape_value(j, q_index)) *
+                                      fe_values.JxW(q_index)); // dx
 
-      cell->get_dof_indices(local_dof_indices);
-      constraints.distribute_local_to_global(
-        cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
-      // for (const unsigned int i : fe_values.dof_indices())
-      //   {
-      //     for (const unsigned int j : fe_values.dof_indices())
-      //       system_matrix.add(local_dof_indices[i],
-      //                         local_dof_indices[j],
-      //                         cell_matrix(i, j));
+              cell_rhs(i) +=
+                ((-fe_values.shape_grad(i, q_index) * n * // - nabla v . n  g
+                    par.exact_solution.value(x_q) +
+                  +par.gamma / cell->face(f)->diameter() * // + gamma/h v g
+                    fe_values.shape_value(i, q_index) *
+                    par.exact_solution.value(x_q)) *
+                 fe_values.JxW(q_index)); // dx
+            }
+        }
+    };
 
-      //     system_rhs(local_dof_indices[i]) += cell_rhs(i);
-      //   }
-    }
 
-  // std::map<types::global_dof_index, double> boundary_values;
-  // VectorTools::interpolate_boundary_values(dof_handler,
-  //                                          0,
-  //                                          par.exact_solution,
-  //                                          boundary_values);
-  // MatrixTools::apply_boundary_values(boundary_values,
-  //                                    system_matrix,
-  //                                    solution,
-  //                                    system_rhs);
+  auto copier = [&](const auto &copy) {
+    constraints.distribute_local_to_global(copy.matrices[0],
+                                           copy.vectors[0],
+                                           copy.local_dof_indices[0],
+                                           system_matrix,
+                                           system_rhs);
+  };
+
+  // for (const auto &cell : dof_handler.active_cell_iterators())
+  //   {
+  //     cell_worker(cell, scratch_data, copy_data);
+  //     for(const auto &f: cell->face_iterators()) {
+  //       if(cell->face(f)->at_boundary() {
+  //          boundary_worker(cell, f, scratch_data, copy_data);
+  //      } else {
+  //          // figure out who is neighbor, subface, etc
+  //          face_worker(cell, f, sb, ncell, nf, nsf, scratch_data, copy_data);
+  //      }
+  //     copier(copy_data);
+  //   }
+  MeshWorker::mesh_loop(dof_handler.begin_active(),
+                        dof_handler.end(),
+                        cell_worker,
+                        copier,
+                        scratch_data,
+                        copy_data,
+                        MeshWorker::assemble_own_cells |
+                          MeshWorker::assemble_boundary_faces,
+                        boundary_worker);
 }
 
 

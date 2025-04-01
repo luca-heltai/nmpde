@@ -38,119 +38,86 @@
 
 using namespace dealii;
 
-template <int dim>
-struct StokesParameters
-{
-  StokesParameters()
-    : exact_solution(dim + 1)
-    , rhs_function(dim + 1)
-    , neumann_function(dim + 1)
-    , convergence_table({"u", "u", "p"},
-                        {{VectorTools::H1_norm, VectorTools::L2_norm},
-                         {VectorTools::L2_norm}})
-  {
-    prm.enter_subsection("Stokes parameters");
-    {
-      prm.add_parameter("Finite element degree", fe_degree);
-      prm.add_parameter("Initial refinement", initial_refinement);
-      prm.add_parameter("Number of cycles", n_cycles);
-      prm.add_parameter("Exact solution expression", exact_solution_expression);
-      prm.add_parameter("Neumann data expression", neumann_function_expression);
-      prm.add_parameter("Right hand side expression", rhs_expression);
-      prm.add_parameter("Viscosity", eta);
-      prm.add_parameter("Local refinement top fraction", top_fraction);
-      prm.add_parameter("Local refinement bottom fraction", bottom_fraction);
-      prm.add_parameter("Dirichlet boundary ids", dirichlet_ids);
-      prm.add_parameter("Neumann boundary ids", neumann_ids);
-    }
-    prm.leave_subsection();
-
-    prm.enter_subsection("Convergence table");
-    convergence_table.add_parameters(prm);
-    prm.leave_subsection();
-
-    try
-      {
-        prm.parse_input("stokes_" + std::to_string(dim) + "d.prm");
-      }
-    catch (std::exception &exc)
-      {
-        prm.print_parameters("stokes_" + std::to_string(dim) + "d.prm");
-        prm.parse_input("stokes_" + std::to_string(dim) + "d.prm");
-      }
-    std::map<std::string, double> constants;
-    constants["pi"] = numbers::PI;
-    exact_solution.initialize(FunctionParser<dim>::default_variable_names(),
-                              {exact_solution_expression},
-                              constants);
-    rhs_function.initialize(FunctionParser<dim>::default_variable_names(),
-                            {rhs_expression},
-                            constants);
-
-    neumann_function.initialize(FunctionParser<dim>::default_variable_names(),
-                                {neumann_function_expression},
-                                constants);
-  }
-  unsigned int fe_degree                   = 1;
-  unsigned int initial_refinement          = 3;
-  unsigned int n_cycles                    = 1;
-  std::string  exact_solution_expression   = "0; 0; 0";
-  std::string  rhs_expression              = "0; 0; 0";
-  std::string  neumann_function_expression = "0; 0; 0";
-  double       eta                         = 1.0;
-
-  std::set<types::boundary_id> dirichlet_ids = {0};
-  std::set<types::boundary_id> neumann_ids   = {1};
-
-  double top_fraction    = .3;
-  double bottom_fraction = 0;
-
-  FunctionParser<dim> exact_solution;
-  FunctionParser<dim> rhs_function;
-  FunctionParser<dim> neumann_function;
-
-  mutable ParsedConvergenceTable convergence_table;
-
-  ParameterHandler prm;
-};
-
-
-
+/**
+ * @brief Stokes equations for a viscous fluid
+ *
+ * The Stokes equations describe the motion of a viscous, incompressible fluid.
+ *
+ * @f[
+ * \nabla p + \rho_f (\mathbf{u} \cdot \nabla) \mathbf{u} - \mu_f \nabla^2
+ * \mathbf{u} = 0 \nabla \cdot \mathbf{u} = 0
+ * @f]
+ *
+ * Where:
+ * - @f$ p @f$ is the fluid pressure
+ * - @f$ \rho_f @f$ is the fluid density
+ * - @f$ \mathbf{u} @f$ is the fluid velocity vector
+ * - @f$ \mu_f @f$ is the fluid dynamic viscosity
+ *
+ * The first equation (1) represents the conservation of momentum, while the
+ * second equation represents the incompressibility constraint.
+ */
 template <int dim>
 class Stokes
 {
 public:
+  /**
+   * @fn Stokes(const StokesParameters<dim> &parameters)
+   * @brief Constructor that takes a StokesParameters object as argument.
+   *
+   * Initializes the class with the given parameters.
+   */
   Stokes(const StokesParameters<dim> &parameters);
+
+  /**
+   * @fn void run()
+   * @brief Method to run the simulation.
+   *
+   * This method sets up and solves the Stokes equations.
+   */
   void
   run();
 
 private:
+  /**
+   * @fn void make_grid()
+   * @brief Private method to create the grid.
+   *
+   * Creates a mesh for the computational domain.
+   */
   void
   make_grid();
+
+  /**
+   * @fn void setup_system()
+   * @brief Private method to set up the system.
+   *
+   * Initializes the finite element system and sets up the matrix structure.
+   */
   void
   setup_system();
+
+  /**
+   * @fn void assemble_system()
+   * @brief Private method to assemble the system matrix.
+   *
+   * Assembles the linear system matrix from the contributions of each finite
+   * element.
+   */
   void
   assemble_system();
+
+  /**
+   * @fn void solve()
+   * @brief Private method to solve the linear system.
+   *
+   * Solves the linear system using a chosen solver.
+   */
   void
   solve();
-  void
-  output_results(const unsigned int cycle) const;
 
-  const StokesParameters<dim> &par;
-
-  Triangulation<dim> triangulation;
-  FESystem<dim>      fe;
-  DoFHandler<dim>    dof_handler;
-
-  AffineConstraints<double> constraints;
-
-  SparsityPattern      sparsity_pattern;
-  SparseMatrix<double> system_matrix;
-
-  Vector<double> solution;
-  Vector<double> system_rhs;
-};
-
+  /**
+   * @fn void output_results(const unsigned int cycle) const
 
 
 template <int dim>
@@ -166,7 +133,17 @@ template <int dim>
 void
 Stokes<dim>::make_grid()
 {
-  GridGenerator::hyper_cube(triangulation, 0, 1, true);
+  // Generate a hyper shell
+
+  
+
+
+  GridGenerator::channel_with_cylinder(triangulation,
+                                       par.domain_shell_region_width,
+                                       par.domain_n_shells,
+                                       par.domain_skewness,
+                                       true);
+
   triangulation.refine_global(par.initial_refinement);
 
   std::cout << "   Number of active cells: " << triangulation.n_active_cells()
