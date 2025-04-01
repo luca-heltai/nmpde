@@ -39,4 +39,8 @@ Your task is to prepare a one-hour lecture on one of the following topics:
 
 3. Implement a coupled Laplace-Beltrami -- Poisson problem (step-38 + step-6)
 
-4.
+4. Add support for Chapel in deal.II* (step-64 con chapel)
+
+5. Implement step-64 using Kokkos.
+
+6. A time dependent problem, using SUNDIALS, and Nitsche boundary conditions.
