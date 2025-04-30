@@ -4,7 +4,7 @@ This laboratory session is designed to help you explore the shapes of basis func
 
 ## Degrees of Freedom per Object
 
-In the context of finite element methods (FEM), the term "degrees of freedom" (DoF) refers to the number of independent scalar values that are used to represent a function on a given finite element mesh. Each degree of freedom corresponds to the result of evaluating a linear functional on the mesh where the solution is approximated. The most common degrees of freedom used in FEM are function values at interpolation points (vertices, midpoint of vertices, midpoint of cells, etc.).
+In the context of finite element methods (FEM), the term "degrees of freedom" (DoF) refers to the number of independent scalar values that are used to represent a function on a given finite element mesh. Each degree of freedom corresponds to the result of evaluating a linear functional on the mesh where the solution is approximated. The most common degrees of freedom used in FEM are function values at interpolation points (vertices, midpoint of edges, midpoint of cells, etc.).
 
 ### Degrees of Freedom per Object
 
