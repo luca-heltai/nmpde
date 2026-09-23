@@ -8,9 +8,9 @@ In this lab, you will extend the work from Lab 5 to implement the theoretical er
 
 The goal of this exercise is to use `MeshWorker::mesh_loop` to assemble the error estimator defined in class:
 
-\[
+$$
 \eta_T = h_T \| f + \Delta u_h \|_{L^2(T)} + \sum_{F \in \partial T} \frac12 h_F^{1/2} \| [\nabla u_h] \|_{L^2(F)}
-\]
+$$
 
 ### Starting Point
 

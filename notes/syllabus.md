@@ -21,7 +21,7 @@
 
 #### A priori Error Analysis
 
-- **Model Problem and Error Analysis**: Elliptic problems with Dirichlet/Robin/Neumann boundary conditions, elliptic regularity, and error analysis in \(H^1\) and \(L^2\).
+- **Model Problem and Error Analysis**: Elliptic problems with Dirichlet/Robin/Neumann boundary conditions, elliptic regularity, and error analysis in $H^1$ and $L^2$.
 
 #### Stabilization Mechanisms
 
@@ -45,7 +45,7 @@
 
 #### Darcy and Stokes
 
-- **Application Modules**: Specialized modules on Darcy and Stokes equations, focusing on mixed formulations, \(H(div)\) finite elements, and stable pairs for Stokes equations, culminating in a collaborative project.
+- **Application Modules**: Specialized modules on Darcy and Stokes equations, focusing on mixed formulations, $H(div)$ finite elements, and stable pairs for Stokes equations, culminating in a collaborative project.
 
 #### Projects and Seminars
 
