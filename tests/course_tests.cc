@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <deal.II/base/point.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/tria.h>
@@ -22,7 +23,8 @@ namespace
     fs::create_directories(filename.parent_path());
 
     dealii::Triangulation<2> triangulation;
-    dealii::GridGenerator::hyper_cube(triangulation, 0.0, 1.0);
+    dealii::GridGenerator::hyper_shell(
+      triangulation, dealii::Point<2>(), 1.0, 2.0);
     triangulation.refine_global(refinement);
 
     std::ofstream output(filename);
