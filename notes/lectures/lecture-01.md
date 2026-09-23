@@ -85,7 +85,7 @@ V\to\mathbb{R}$ and a functional $f\in V'$. Two properties are central:
 - **coercivity:** there is a constant $\alpha>0$ such that
   $a(v,v)\geq\alpha\lVert v\rVert_V^2$ for all $v\in V$.
 
-```{prf:theorem} Lax–Milgram lemma
+````{prf:theorem} Lax–Milgram lemma
 :label: thm:lecture-01-lax-milgram
 
 Let $V$ be a Hilbert space and let $a:V\times V\to\mathbb{R}$ be bounded
@@ -101,7 +101,7 @@ Moreover,
 ```{math}
 \lVert u\rVert_V \leq \frac{1}{\alpha}\lVert f\rVert_{V'}.
 ```
-```
+````
 
 For the Poisson problem, boundedness follows from the Cauchy–Schwarz inequality:
 
@@ -192,7 +192,7 @@ behind the basic a priori error estimate.
 
 ## 6. Céa's lemma
 
-```{prf:theorem} Céa's lemma
+````{prf:theorem} Céa's lemma
 :label: thm:lecture-01-cea
 
 Assume that $a$ is bounded with constant $M$ and coercive with constant
@@ -205,7 +205,7 @@ solve {eq}`eq:lecture-01-discrete`. Then
 \inf_{v_h\in V_h}\lVert u-v_h\rVert_V.
 ```
 
-```
+````
 
 The estimate separates the analysis into two parts:
 
