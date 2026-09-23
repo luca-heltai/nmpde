@@ -253,9 +253,9 @@ Poisson<dim>::estimate()
         const auto    &dofs = scratch.get_local_dof_indices();
         for (unsigned int i = 0; i < fe_v.n_current_interface_dofs(); ++i)
           {
-            gradient_jump += fe_v.jump_gradient(i, q) * solution[dofs[i]];
+            gradient_jump += fe_v[FEValuesExtractors::Scalar(0)].jump_in_gradients(i, q) * solution[dofs[i]];
           }
-        const auto jump = gradient_jump * fe_v.normal(q);
+        const auto jump = gradient_jump * fe_v.normal_vector(q);
         integral += 1. / 24.0 * (jump * jump) * cell->diameter() * fe_v.JxW(q);
       }
 

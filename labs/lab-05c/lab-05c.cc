@@ -10,6 +10,7 @@
 #include <deal.II/dofs/dof_tools.h>
 
 #include <deal.II/fe/fe_q.h>
+#include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 
 #include <deal.II/grid/grid_generator.h>
@@ -21,7 +22,6 @@
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/vector.h>
 
@@ -36,11 +36,15 @@
 using namespace dealii;
 
 template <int dim>
-struct PoissonParameters
+struct ElasticityParameters
 {
-  PoissonParameters()
+  ElasticityParameters()
+    : exact_solution(dim)
+    , rhs_function(dim)
+    , neumann_function(dim)
+    , convergence_table(std::vector<std::string>(dim, "u"))
   {
-    prm.enter_subsection("Poisson parameters");
+    prm.enter_subsection("Elasticity parameters");
     {
       prm.add_parameter("Finite element degree", fe_degree);
       prm.add_parameter("Initial refinement", initial_refinement);
@@ -49,9 +53,8 @@ struct PoissonParameters
       prm.add_parameter("Right hand side expression", rhs_expression);
       prm.add_parameter("Neumann boundary expression", neumann_expression);
       prm.add_parameter("Neumann boundary ids", neumann_boundary_ids);
-      prm.add_parameter("Penalty factor", penalty_factor);
-      prm.add_parameter("Top fraction", top_fraction);
-      prm.add_parameter("Bottom fraction", bottom_fraction);
+      prm.add_parameter("Lame parameter mu", mu);
+      prm.add_parameter("Lame parameter lambda", lambda);
     }
     prm.leave_subsection();
 
@@ -61,12 +64,12 @@ struct PoissonParameters
 
     try
       {
-        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
+        prm.parse_input("elasticity_" + std::to_string(dim) + "d.prm");
       }
     catch (std::exception &exc)
       {
-        prm.print_parameters("poisson_" + std::to_string(dim) + "d.prm");
-        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
+        prm.print_parameters("elasticity_" + std::to_string(dim) + "d.prm");
+        prm.parse_input("elasticity_" + std::to_string(dim) + "d.prm");
       }
     std::map<std::string, double> constants;
     constants["pi"] = numbers::PI;
@@ -80,16 +83,17 @@ struct PoissonParameters
                                 {neumann_expression},
                                 constants);
   }
-  unsigned int fe_degree                 = 1;
-  unsigned int initial_refinement        = 3;
-  unsigned int n_cycles                  = 1;
-  double       penalty_factor            = 10.0;
-  double       top_fraction              = 0.3;
-  double       bottom_fraction           = 0.03;
-  std::string  exact_solution_expression = "cos(pi*x)*cos(pi*y)";
-  std::string  rhs_expression            = "2*pi*pi*cos(pi*x)*cos(pi*y)";
-  std::string  neumann_expression        = "cos(2*pi*x)";
-  std::set<types::boundary_id> neumann_boundary_ids = {};
+  unsigned int fe_degree          = 1;
+  unsigned int initial_refinement = 3;
+  unsigned int n_cycles           = 1;
+
+  double mu     = 1.0;
+  double lambda = 1.0;
+
+  std::string                  exact_solution_expression = "0; 0";
+  std::string                  rhs_expression            = "0; -1";
+  std::string                  neumann_expression        = "0; 0";
+  std::set<types::boundary_id> neumann_boundary_ids      = {};
 
   FunctionParser<dim> exact_solution;
   FunctionParser<dim> rhs_function;
@@ -97,16 +101,16 @@ struct PoissonParameters
 
   mutable ParsedConvergenceTable convergence_table;
 
-  mutable ParameterHandler prm;
+  ParameterHandler prm;
 };
 
 
 
 template <int dim>
-class Poisson
+class Elasticity
 {
 public:
-  Poisson(const PoissonParameters<dim> &parameters);
+  Elasticity(const ElasticityParameters<dim> &parameters);
   void
   run();
 
@@ -128,10 +132,10 @@ private:
   void
   output_results(const unsigned int cycle) const;
 
-  const PoissonParameters<dim> &par;
+  const ElasticityParameters<dim> &par;
 
   Triangulation<dim> triangulation;
-  FE_Q<dim>          fe;
+  FESystem<dim>      fe;
   DoFHandler<dim>    dof_handler;
 
   AffineConstraints<double> constraints;
@@ -142,26 +146,28 @@ private:
   Vector<double> solution;
   Vector<double> system_rhs;
 
-  Vector<float>                estimated_error_per_cell;
-  std::set<types::boundary_id> dirichlet_boundary_ids;
+  Vector<float> estimated_error_per_cell;
+
+  FEValuesExtractors::Vector displacement;
 };
 
 
 
 template <int dim>
-Poisson<dim>::Poisson(const PoissonParameters<dim> &par)
+Elasticity<dim>::Elasticity(const ElasticityParameters<dim> &par)
   : par(par)
-  , fe(par.fe_degree)
+  , fe(FESystem<dim>(FE_Q<dim>(par.fe_degree), dim))
   , dof_handler(triangulation)
+  , displacement(0)
 {}
 
 
 
 template <int dim>
 void
-Poisson<dim>::make_grid()
+Elasticity<dim>::make_grid()
 {
-  GridGenerator::hyper_cube(triangulation, 0, 1, true);
+  GridGenerator::hyper_cube(triangulation, -1, 1, true);
   triangulation.refine_global(par.initial_refinement);
 
   std::cout << "   Number of active cells: " << triangulation.n_active_cells()
@@ -174,7 +180,7 @@ Poisson<dim>::make_grid()
 
 template <int dim>
 void
-Poisson<dim>::estimate()
+Elasticity<dim>::estimate()
 {
   KellyErrorEstimator<dim>::estimate(dof_handler,
                                      QGauss<dim - 1>(fe.degree + 1),
@@ -185,17 +191,17 @@ Poisson<dim>::estimate()
 
 template <int dim>
 void
-Poisson<dim>::mark()
+Elasticity<dim>::mark()
 {
   GridRefinement::refine_and_coarsen_fixed_number(triangulation,
                                                   estimated_error_per_cell,
-                                                  par.top_fraction,
-                                                  par.bottom_fraction);
+                                                  0.3,
+                                                  0.03);
 }
 
 template <int dim>
 void
-Poisson<dim>::refine()
+Elasticity<dim>::refine()
 {
   triangulation.execute_coarsening_and_refinement();
 }
@@ -204,7 +210,7 @@ Poisson<dim>::refine()
 
 template <int dim>
 void
-Poisson<dim>::setup_system()
+Elasticity<dim>::setup_system()
 {
   dof_handler.distribute_dofs(fe);
 
@@ -213,19 +219,16 @@ Poisson<dim>::setup_system()
 
   constraints.clear();
   auto all_boundary_ids = triangulation.get_boundary_ids();
-
+  std::set<types::boundary_id> dirichlet_boundary_ids;
   for (const auto &id : all_boundary_ids)
     if (par.neumann_boundary_ids.find(id) == par.neumann_boundary_ids.end())
       dirichlet_boundary_ids.insert(id);
 
-  std::cout << "Dirichlet ids: "
-            << Patterns::Tools::to_string(dirichlet_boundary_ids) << std::endl;
-
-  // for (const auto &id : dirichlet_boundary_ids)
-  //   VectorTools::interpolate_boundary_values(dof_handler,
-  //                                            id,
-  //                                            par.exact_solution,
-  //                                            constraints);
+  for (const auto &id : dirichlet_boundary_ids)
+    VectorTools::interpolate_boundary_values(dof_handler,
+                                             id,
+                                             par.exact_solution,
+                                             constraints);
 
   // Create hanging node constraints
   DoFTools::make_hanging_node_constraints(dof_handler, constraints);
@@ -247,7 +250,7 @@ Poisson<dim>::setup_system()
 
 template <int dim>
 void
-Poisson<dim>::assemble_system()
+Elasticity<dim>::assemble_system()
 {
   QGauss<dim>     quadrature_formula(fe.degree + 1);
   QGauss<dim - 1> face_quadrature_formula(fe.degree + 1);
@@ -260,7 +263,6 @@ Poisson<dim>::assemble_system()
   FEFaceValues<dim> fe_face_values(fe,
                                    face_quadrature_formula,
                                    update_values | update_quadrature_points |
-                                     update_gradients | update_normal_vectors |
                                      update_JxW_values);
 
   const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
@@ -270,30 +272,38 @@ Poisson<dim>::assemble_system()
 
   std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
 
-  system_matrix = 0;
-  system_rhs    = 0;
-
   for (const auto &cell : dof_handler.active_cell_iterators())
     {
       fe_values.reinit(cell);
       cell_matrix = 0;
       cell_rhs    = 0;
 
-      const double h = cell->diameter();
-
       for (const unsigned int q_index : fe_values.quadrature_point_indices())
         for (const unsigned int i : fe_values.dof_indices())
           {
+            const unsigned int comp_i = fe.system_to_component_index(i).first;
+
+            const auto v_i     = fe_values[displacement].value(i, q_index);
+            const auto div_v_i = fe_values[displacement].divergence(i, q_index);
+            const auto eps_v_i =
+              fe_values[displacement].symmetric_gradient(i, q_index);
+
             for (const unsigned int j : fe_values.dof_indices())
-              cell_matrix(i, j) +=
-                (fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
-                 fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
-                 fe_values.JxW(q_index));           // dx
+              {
+                const auto eps_v_j =
+                  fe_values[displacement].symmetric_gradient(j, q_index);
+                const auto div_v_j =
+                  fe_values[displacement].divergence(j, q_index);
+
+                cell_matrix(i, j) += (par.mu * eps_v_i * eps_v_j +
+                                      par.lambda * div_v_i * div_v_j) *
+                                     fe_values.JxW(q_index); // dx
+              }
 
             const auto &x_q = fe_values.quadrature_point(q_index);
-            cell_rhs(i) += (fe_values.shape_value(i, q_index) * // phi_i(x_q)
-                            par.rhs_function.value(x_q) *       // f(x_q)
-                            fe_values.JxW(q_index));            // dx
+            cell_rhs(i) += (v_i[comp_i] *                         // phi_i(x_q)
+                            par.rhs_function.value(x_q, comp_i) * // f(x_q)
+                            fe_values.JxW(q_index));              // dx
           }
 
       // Neumann boundary condition
@@ -312,42 +322,6 @@ Poisson<dim>::assemble_system()
                      fe_face_values.quadrature_point(q_index)) * // g(x_q)
                    fe_face_values.JxW(q_index));                 // ds
           }
-        else if (cell->face(f)->at_boundary() &&
-                 dirichlet_boundary_ids.find(cell->face(f)->boundary_id()) !=
-                   dirichlet_boundary_ids.end())
-          {
-            fe_face_values.reinit(cell, f);
-            for (const unsigned int q_index :
-                 fe_face_values.quadrature_point_indices())
-              for (const unsigned int i : fe_face_values.dof_indices())
-                {
-                  cell_rhs(i) +=
-                    (-fe_face_values.normal_vector(q_index) *
-                       fe_face_values.shape_grad(i, q_index) +
-                     par.penalty_factor / h *
-                       fe_face_values.shape_value(i, q_index)) * // phi_i(x_q)
-                    par.exact_solution.value(
-                      fe_face_values.quadrature_point(q_index)) * // g(x_q)
-                    fe_face_values.JxW(q_index);                  // ds
-
-                  for (const unsigned int j : fe_face_values.dof_indices())
-                    cell_matrix(i, j) +=
-                      (-fe_face_values.normal_vector(q_index) *
-                         fe_face_values.shape_grad(i, q_index) *
-                         fe_face_values.shape_value(
-                           j, q_index) // grad phi_i(x_q) * phi_j(x_q)
-                       - fe_face_values.normal_vector(q_index) *
-                           fe_face_values.shape_grad(j, q_index) *
-                           fe_face_values.shape_value(
-                             i,
-                             q_index) // grad phi_j(x_q) * phi_i(x_q)
-                       +
-                       par.penalty_factor / h *
-                         fe_face_values.shape_value(i, q_index) *  // phi_i(x_q)
-                         fe_face_values.shape_value(j, q_index)) * // phi_j(x_q)
-                      fe_face_values.JxW(q_index);                 // ds
-                }
-          }
 
       cell->get_dof_indices(local_dof_indices);
       constraints.distribute_local_to_global(
@@ -362,30 +336,48 @@ Poisson<dim>::assemble_system()
       //     system_rhs(local_dof_indices[i]) += cell_rhs(i);
       //   }
     }
+
+  // std::map<types::global_dof_index, double> boundary_values;
+  // VectorTools::interpolate_boundary_values(dof_handler,
+  //                                          0,
+  //                                          par.exact_solution,
+  //                                          boundary_values);
+  // MatrixTools::apply_boundary_values(boundary_values,
+  //                                    system_matrix,
+  //                                    solution,
+  //                                    system_rhs);
 }
 
 
 
 template <int dim>
 void
-Poisson<dim>::solve()
+Elasticity<dim>::solve()
 {
-  SparseDirectUMFPACK A;
-  A.initialize(system_matrix);
-  A.vmult(solution, system_rhs);
+  SolverControl            solver_control(1000, 1e-12);
+  SolverCG<Vector<double>> solver(solver_control);
+  solver.solve(system_matrix, solution, system_rhs, PreconditionIdentity());
   constraints.distribute(solution);
+
+  std::cout << "   " << solver_control.last_step()
+            << " CG iterations needed to obtain convergence." << std::endl;
 }
 
 
 
 template <int dim>
 void
-Poisson<dim>::output_results(const unsigned int cycle) const
+Elasticity<dim>::output_results(const unsigned int cycle) const
 {
   DataOut<dim> data_out;
 
   data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(solution, "solution");
+  data_out.add_data_vector(
+    solution,
+    std::vector<std::string>(dim, "solution"),
+    DataOut<dim>::type_dof_data,
+    std::vector<DataComponentInterpretation::DataComponentInterpretation>(
+      dim, DataComponentInterpretation::component_is_part_of_vector));
   data_out.add_data_vector(estimated_error_per_cell, "estimator");
 
   data_out.build_patches();
@@ -408,10 +400,9 @@ Poisson<dim>::output_results(const unsigned int cycle) const
 
 template <int dim>
 void
-Poisson<dim>::run()
+Elasticity<dim>::run()
 {
-  std::cout << "Solving problem in " << dim
-            << " space dimensions with penalty: " << par.penalty_factor
+  std::cout << "Solving problem in " << dim << " space dimensions."
             << std::endl;
 
   for (unsigned int cycle = 0; cycle < par.n_cycles; ++cycle)
@@ -441,14 +432,14 @@ int
 main()
 {
   {
-    PoissonParameters<2> par;
-    Poisson<2>           laplace_problem_2d(par);
+    ElasticityParameters<2> par;
+    Elasticity<2>           laplace_problem_2d(par);
     laplace_problem_2d.run();
   }
 
   // {
-  //   PoissonParameters<3> par;
-  //   Poisson<3>           laplace_problem_3d(par);
+  //   ElasticityParameters<3> par;
+  //   Elasticity<3>           laplace_problem_3d(par);
   //   laplace_problem_3d.run();
   // }
 

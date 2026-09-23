@@ -1,0 +1,26 @@
+version: 1
+
+project:
+  title: Numerical Methods for Partial Differential Equations
+  authors:
+    - name: Luca Heltai
+  github: luca-heltai/nmpde
+  bibliography:
+    - references.bib
+  static_files:
+    - assets
+  toc:
+    - file: intro.md
+    - file: syllabus.md
+    - file: references.md
+    - file: lectures/index.md
+      children:
+        - file: lectures/lecture-01.md
+    - file: laboratories/index.md
+    - file: projects.md
+
+site:
+  template: book-theme
+  options:
+    folders: true
+    logo: ./figures/logo.png

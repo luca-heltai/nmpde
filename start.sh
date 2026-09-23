@@ -16,7 +16,8 @@ if [[ ! -x "${venv_dir}/bin/python" ]] || ! "${venv_dir}/bin/python" -c 'import 
   "${python_bin}" -m venv --clear "${venv_dir}"
 fi
 
-"${venv_dir}/bin/python" -m pip install --requirement "${repo_dir}/requirements.txt"
+"${venv_dir}/bin/python" -m pip install --disable-pip-version-check \
+  --requirement "${repo_dir}/requirements.txt"
 
 if [[ "${BASH_SOURCE[0]}" != "$0" ]]; then
   source "${venv_dir}/bin/activate"
@@ -26,5 +27,5 @@ elif [[ "$#" -gt 0 ]]; then
 else
   echo "Virtual environment ready: ${venv_dir}"
   echo "Activate it in the current shell with: source ./start.sh"
-  echo "Or build directly with: ./start.sh build notes/"
+  echo "Or build directly with: ./start.sh build --html notes/"
 fi

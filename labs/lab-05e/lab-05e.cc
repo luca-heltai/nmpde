@@ -160,7 +160,7 @@ private:
 template <int dim>
 Stokes<dim>::Stokes(const StokesParameters<dim> &par)
   : par(par)
-  , fe(FE_Q<dim>(par.fe_degree), dim, FE_Q<dim>(par.fe_degree), 1)
+  , fe(FE_Q<dim>(par.fe_degree + 1), dim, FE_Q<dim>(par.fe_degree), 1)
   , dof_handler(triangulation)
   , velocity(0)
   , pressure(dim)
@@ -172,7 +172,7 @@ template <int dim>
 void
 Stokes<dim>::make_grid()
 {
-  GridGenerator::hyper_cube(triangulation, -1, 1, true);
+  GridGenerator::hyper_cube(triangulation, 0, 1, true);
   triangulation.refine_global(par.initial_refinement);
 
   std::cout << "   Number of active cells: " << triangulation.n_active_cells()
@@ -200,8 +200,8 @@ Stokes<dim>::mark()
 {
   GridRefinement::refine_and_coarsen_fixed_number(triangulation,
                                                   estimated_error_per_cell,
-                                                  0.3,
-                                                  0.03);
+                                                  1,
+                                                  0);
 }
 
 template <int dim>
@@ -233,7 +233,8 @@ Stokes<dim>::setup_system()
     VectorTools::interpolate_boundary_values(dof_handler,
                                              id,
                                              par.exact_solution,
-                                             constraints);
+                                             constraints,
+                                             fe.component_mask(velocity));
 
   // Create hanging node constraints
   DoFTools::make_hanging_node_constraints(dof_handler, constraints);
@@ -364,7 +365,13 @@ Stokes<dim>::solve()
   SparseDirectUMFPACK solver;
   solver.initialize(system_matrix);
   solver.vmult(solution, system_rhs);
+  std::vector<bool> is_pressure_dof(dof_handler.n_dofs(), false);
+  auto              pressure_dofs =
+    DoFTools::extract_dofs(dof_handler, fe.component_mask(pressure));
+  for (const auto &dof : pressure_dofs)
+    is_pressure_dof[dof] = true;
   constraints.distribute(solution);
+  VectorTools::subtract_mean_value(solution, is_pressure_dof);
 }
 
 

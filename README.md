@@ -1,38 +1,64 @@
-# [Metodi Numerici per Equazioni alle Derivate Parziali](https://luca-heltai.github.io/nmpde/)
+# Metodi Numerici per Equazioni alle Derivate Parziali
 
-[![deploy-book](https://github.com/luca-heltai/nmpde/actions/workflows/deploy.yaml/badge.svg)](https://github.com/luca-heltai/nmpde/actions/workflows/deploy.yaml)
+[Libro del corso](https://luca-heltai.github.io/nmpde/)
 
-## L'ambiente jupyter-book
+Il libro web è scritto in MyST Markdown e viene costruito con Jupyter Book 2.
+Il workflow GitHub Actions compila e testa i laboratori nell’immagine
+`dealii/dealii:v9.7.1-noble`, genera le figure del corso con la testsuite GTest,
+costruisce il libro e lo pubblica su GitHub Pages.
 
-Per generare le pagine web con jupyter-book si usa la virtualenv del repository e il file
-`requirements.txt`. Sul computer del docente `start.sh` preferisce
-`~/anaconda3/bin/python3`; sulle altre macchine usa il primo `python3` disponibile.
+## Libro web
 
-Per inizializzare e attivare l'ambiente nella shell corrente:
+Sul computer del docente l’ambiente Python usa `~/anaconda3/bin/python3`:
 
-```
+```bash
 source ./start.sh
+make site
 ```
 
-Lo script ricrea automaticamente una virtualenv mancante o corrotta. In alternativa
-può eseguire direttamente un comando JupyterBook:
+Il comando `make site` costruisce il sito HTML in `notes/_build/html/`.
+Per la build completa, compresi compilazione dei laboratori, test e figure:
 
+```bash
+make all
 ```
-./start.sh build notes/
+
+Le figure generate dai test sono in `notes/assets/generated/` e non vengono
+versionate: sono ricreate automaticamente sia localmente sia in CI.
+
+## Laboratori deal.II
+
+È disponibile un devcontainer basato sull’immagine ufficiale:
+
+```text
+dealii/dealii:v9.7.1-noble
 ```
 
-Dopo l'attivazione, navigare nella cartella del repository e utilizzare `make`:
+Dopo l’apertura del repository nel container:
 
-- `make clean` ripulisce la distribuzione,
-- `make build` costruisce le pagine html,
-- `make show` costruisce le pagine e le mostra in un browser locale,
-- `make publish` utilizza `gh-pages` per pubblicare le pagine web,
-- `make latex` produce una versione `.tex` dei laboratori.
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --parallel 2
+ctest --test-dir build --output-on-failure
+```
 
-Il workflow GitHub Actions esegue gli stessi passaggi su Python 3.13 e pubblica automaticamente
-il contenuto costruito dalla `main` su GitHub Pages.
+I programmi sono costruiti da un unico `CMakeLists.txt` alla radice. Per
+eseguire un laboratorio, ad esempio:
 
-Ad ogni commit su `main`, le pagine all'indirizzo <https://luca-heltai.github.io/nmpde/> vengono
-rigenerate in modo automatico usando la *github action* qui sotto.
+```bash
+./build/bin/lab-01
+```
 
-[![deploy-book](https://github.com/luca-heltai/nmpde/actions/workflows/deploy.yaml/badge.svg)](https://github.com/luca-heltai/nmpde/actions/workflows/deploy.yaml)
+La testsuite si trova in `tests/`; oltre a verificare la presenza dei materiali
+dei laboratori, genera le figure SVG usate nelle lecture e nei laboratori.
+
+## Struttura
+
+- `notes/`: libro web e contenuti pubblicati;
+- `labs/`: README e sorgenti C++ dei laboratori;
+- `tests/`: testsuite GTest e generatori di figure;
+- `.devcontainer/`: ambiente riproducibile deal.II;
+- `.github/workflows/deploy.yaml`: CI, build e deploy GitHub Pages.
+
+Le lezioni e i laboratori futuri restano fuori dalla TOC finché non vengono
+rilasciati durante il corso.

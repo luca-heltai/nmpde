@@ -13,6 +13,7 @@
 #include <deal.II/fe/fe_values.h>
 
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_refinement.h>
 #include <deal.II/grid/tria.h>
 
 #include <deal.II/lac/affine_constraints.h>
@@ -24,6 +25,7 @@
 #include <deal.II/lac/vector.h>
 
 #include <deal.II/numerics/data_out.h>
+#include <deal.II/numerics/error_estimator.h>
 #include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
@@ -44,6 +46,8 @@ struct PoissonParameters
       prm.add_parameter("Number of cycles", n_cycles);
       prm.add_parameter("Exact solution expression", exact_solution_expression);
       prm.add_parameter("Right hand side expression", rhs_expression);
+      prm.add_parameter("Neumann boundary expression", neumann_expression);
+      prm.add_parameter("Neumann boundary ids", neumann_boundary_ids);
     }
     prm.leave_subsection();
 
@@ -68,15 +72,21 @@ struct PoissonParameters
     rhs_function.initialize(FunctionParser<dim>::default_variable_names(),
                             {rhs_expression},
                             constants);
+    neumann_function.initialize(FunctionParser<dim>::default_variable_names(),
+                                {neumann_expression},
+                                constants);
   }
   unsigned int fe_degree                 = 1;
   unsigned int initial_refinement        = 3;
   unsigned int n_cycles                  = 1;
   std::string  exact_solution_expression = "cos(pi*x)*cos(pi*y)";
   std::string  rhs_expression            = "2*pi*pi*cos(pi*x)*cos(pi*y)";
+  std::string  neumann_expression        = "cos(2*pi*x)";
+  std::set<types::boundary_id> neumann_boundary_ids = {};
 
   FunctionParser<dim> exact_solution;
   FunctionParser<dim> rhs_function;
+  FunctionParser<dim> neumann_function;
 
   mutable ParsedConvergenceTable convergence_table;
 
@@ -96,6 +106,12 @@ public:
 private:
   void
   make_grid();
+  void
+  estimate();
+  void
+  mark();
+  void
+  refine();
   void
   setup_system();
   void
@@ -118,6 +134,8 @@ private:
 
   Vector<double> solution;
   Vector<double> system_rhs;
+
+  Vector<float> estimated_error_per_cell;
 };
 
 
@@ -135,7 +153,7 @@ template <int dim>
 void
 Poisson<dim>::make_grid()
 {
-  GridGenerator::hyper_cube(triangulation, -1, 1);
+  GridGenerator::hyper_cube(triangulation, -1, 1, true);
   triangulation.refine_global(par.initial_refinement);
 
   std::cout << "   Number of active cells: " << triangulation.n_active_cells()
@@ -143,6 +161,37 @@ Poisson<dim>::make_grid()
             << "   Total number of cells: " << triangulation.n_cells()
             << std::endl;
 }
+
+
+
+template <int dim>
+void
+Poisson<dim>::estimate()
+{
+  KellyErrorEstimator<dim>::estimate(dof_handler,
+                                     QGauss<dim - 1>(fe.degree + 1),
+                                     {},
+                                     solution,
+                                     estimated_error_per_cell);
+}
+
+template <int dim>
+void
+Poisson<dim>::mark()
+{
+  GridRefinement::refine_and_coarsen_fixed_number(triangulation,
+                                                  estimated_error_per_cell,
+                                                  0.3,
+                                                  0.03);
+}
+
+template <int dim>
+void
+Poisson<dim>::refine()
+{
+  triangulation.execute_coarsening_and_refinement();
+}
+
 
 
 template <int dim>
@@ -155,10 +204,17 @@ Poisson<dim>::setup_system()
             << std::endl;
 
   constraints.clear();
-  VectorTools::interpolate_boundary_values(dof_handler,
-                                           0,
-                                           par.exact_solution,
-                                           constraints);
+  auto all_boundary_ids = triangulation.get_boundary_ids();
+  std::set<types::boundary_id> dirichlet_boundary_ids;
+  for (const auto &id : all_boundary_ids)
+    if (par.neumann_boundary_ids.find(id) == par.neumann_boundary_ids.end())
+      dirichlet_boundary_ids.insert(id);
+
+  for (const auto &id : dirichlet_boundary_ids)
+    VectorTools::interpolate_boundary_values(dof_handler,
+                                             id,
+                                             par.exact_solution,
+                                             constraints);
 
   // Create hanging node constraints
   DoFTools::make_hanging_node_constraints(dof_handler, constraints);
@@ -172,6 +228,8 @@ Poisson<dim>::setup_system()
 
   solution.reinit(dof_handler.n_dofs());
   system_rhs.reinit(dof_handler.n_dofs());
+
+  estimated_error_per_cell.reinit(triangulation.n_active_cells());
 }
 
 
@@ -180,12 +238,18 @@ template <int dim>
 void
 Poisson<dim>::assemble_system()
 {
-  QGauss<dim> quadrature_formula(fe.degree + 1);
+  QGauss<dim>     quadrature_formula(fe.degree + 1);
+  QGauss<dim - 1> face_quadrature_formula(fe.degree + 1);
 
   FEValues<dim> fe_values(fe,
                           quadrature_formula,
                           update_values | update_gradients |
                             update_quadrature_points | update_JxW_values);
+
+  FEFaceValues<dim> fe_face_values(fe,
+                                   face_quadrature_formula,
+                                   update_values | update_quadrature_points |
+                                     update_JxW_values);
 
   const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
 
@@ -213,6 +277,23 @@ Poisson<dim>::assemble_system()
             cell_rhs(i) += (fe_values.shape_value(i, q_index) * // phi_i(x_q)
                             par.rhs_function.value(x_q) *       // f(x_q)
                             fe_values.JxW(q_index));            // dx
+          }
+
+      // Neumann boundary condition
+      for (const auto &f : cell->face_indices())
+        if (cell->face(f)->at_boundary() &&
+            par.neumann_boundary_ids.find(cell->face(f)->boundary_id()) !=
+              par.neumann_boundary_ids.end())
+          {
+            fe_face_values.reinit(cell, f);
+            for (const unsigned int q_index :
+                 fe_face_values.quadrature_point_indices())
+              for (const unsigned int i : fe_face_values.dof_indices())
+                cell_rhs(i) +=
+                  (fe_face_values.shape_value(i, q_index) * // phi_i(x_q)
+                   par.neumann_function.value(
+                     fe_face_values.quadrature_point(q_index)) * // g(x_q)
+                   fe_face_values.JxW(q_index));                 // ds
           }
 
       cell->get_dof_indices(local_dof_indices);
@@ -265,6 +346,7 @@ Poisson<dim>::output_results(const unsigned int cycle) const
 
   data_out.attach_dof_handler(dof_handler);
   data_out.add_data_vector(solution, "solution");
+  data_out.add_data_vector(estimated_error_per_cell, "estimator");
 
   data_out.build_patches();
 
@@ -297,18 +379,13 @@ Poisson<dim>::run()
         make_grid();
       else
         {
-          // estimate error
-          // refine mesh where error is larger
-          for (const auto &cell : triangulation.active_cell_iterators())
-            {
-              if (cell->center().distance(Point<dim>(0.5, 0.5)) < 0.25)
-                cell->set_refine_flag();
-            }
-          triangulation.execute_coarsening_and_refinement();
+          mark();
+          refine();
         }
       setup_system();
       assemble_system();
       solve();
+      estimate();
       output_results(cycle);
       par.convergence_table.error_from_exact(dof_handler,
                                              solution,

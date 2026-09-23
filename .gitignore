@@ -1,12 +1,18 @@
 /jupyterbook/
+/build/
 /notes/_build/
+/notes/assets/generated/*
+!/notes/assets/generated/.gitkeep
 /_build/
 
 # Local editor and Python caches
 **/.vscode/
 **/__pycache__/
 **/.cache/
+**/.pytest_cache/
+**/.mypy_cache/
 *.py[cod]
+*.DS_Store
 
 # Generated LaTeX and JupyterBook files
 *.aux
@@ -23,3 +29,32 @@
 **/cmake_install.cmake
 **/compile_commands.json
 **/Makefile
+
+# Runtime output from the deal.II laboratories
+**/*.vtu
+**/*.pvtu
+**/*.pvd
+**/*.svg
+**/*.eps
+**/*.gnuplot
+**/*.log
+
+# Local archives, teaching records, and experiments
+/books/
+/lecture_notes_2023_2024/
+/materiale_uni/
+/slides_master/
+/student_projects/
+/scratch/
+/labs/temp/
+/CALENDAR.md
+/CALENDAR-aggiornato.md
+/courseid_696_participants.csv
+/registro.md
+/registro_metodi_numerici_pdes.xls
+
+# Generated laboratory outputs outside the book asset directory
+/labs/lab-01/lab-01
+/labs/lab-01/*.vtk
+/labs/convergence_graphs/*.pdf
+/labs/convergence_graphs/*.tex
