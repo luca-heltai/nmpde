@@ -1,10 +1,18 @@
+JUPYTER_BOOK ?= $(if $(wildcard jupyterbook/bin/jupyter-book),jupyterbook/bin/jupyter-book,jupyter-book)
+
+.PHONY: build clean latex publish show
+
 build:
-	jupyter-book build notes/
+	$(JUPYTER_BOOK) build notes/
+
 publish:
 	ghp-import -n -p -f notes/_build/html
+
 show: build
-	(cd notes/_build/html/ && open index.html &)
+	(open notes/_build/html/index.html &)
+
 latex:
-	jupyter-book build notes/ --builder pdflatex
+	$(JUPYTER_BOOK) build notes/ --builder pdflatex
+
 clean:
-	jupyter-book clean notes/
+	$(JUPYTER_BOOK) clean notes/

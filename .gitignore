@@ -1,2 +1,25 @@
 /jupyterbook/
 /notes/_build/
+/_build/
+
+# Local editor and Python caches
+**/.vscode/
+**/__pycache__/
+**/.cache/
+*.py[cod]
+
+# Generated LaTeX and JupyterBook files
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+
+# Generated deal.II/CMake build files
+**/CMakeFiles/
+**/CMakeCache.txt
+**/cmake_install.cmake
+**/compile_commands.json
+**/Makefile

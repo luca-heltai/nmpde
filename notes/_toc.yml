@@ -6,15 +6,18 @@ root: intro
 chapters:
   - file: syllabus
   - file: references
-  - file: laboratories
+  - file: lectures/index
     sections:
-      - file: lab-01
-      - file: lab-02
-      - file: lab-03
-      - file: lab-04
-      - file: lab-05
-      - file: lab-06
-      - file: lab-07
-      - file: lab-08
-      - file: lab-09
+      - file: lectures/lecture-01
+  - file: laboratories/index
+    sections:
+      - file: laboratories/lab-01
+      - file: laboratories/lab-02
+      - file: laboratories/lab-03
+      - file: laboratories/lab-04
+      - file: laboratories/lab-05
+      - file: laboratories/lab-06
+      - file: laboratories/lab-07
+      - file: laboratories/lab-08
+      - file: laboratories/lab-09
   - file: projects
