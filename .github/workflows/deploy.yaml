@@ -49,6 +49,13 @@ jobs:
         working-directory: notes
         run: jupyter-book build --html --strict --ci --check-links
 
+      - name: Verify rendered references
+        working-directory: notes
+        run: |
+          for key in BrennerScott2010 BoffiEtAl2013 ErnGuermond2004 Ciarlet1978 QuarteroniValli1994; do
+            rg -q "id=\"cite-${key}\"" _build/html/references/index.html
+          done
+
       - name: Upload GitHub Pages artifact
         uses: actions/upload-pages-artifact@v4
         with:
