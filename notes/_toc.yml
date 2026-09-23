@@ -10,14 +10,4 @@ chapters:
     sections:
       - file: lectures/lecture-01
   - file: laboratories/index
-    sections:
-      - file: laboratories/lab-01
-      - file: laboratories/lab-02
-      - file: laboratories/lab-03
-      - file: laboratories/lab-04
-      - file: laboratories/lab-05
-      - file: laboratories/lab-06
-      - file: laboratories/lab-07
-      - file: laboratories/lab-08
-      - file: laboratories/lab-09
   - file: projects
