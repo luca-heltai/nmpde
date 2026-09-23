@@ -1,0 +1,11 @@
+name: deal.II CI
+
+on:
+  push:
+    branches-ignore: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  dealii-tests:
+    uses: ./.github/workflows/dealii-tests.yaml

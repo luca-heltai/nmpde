@@ -1,0 +1,47 @@
+name: deal.II tests
+
+on:
+  workflow_call:
+    inputs:
+      upload-figures:
+        description: Upload figures for the Pages build
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  tests:
+    name: Build laboratories and run GTest
+    runs-on: ubuntu-latest
+    container:
+      image: dealii/dealii:v9.7.1-noble
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Configure CMake
+        run: >-
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+          -DNMPDE_BUILD_LABS=ON -DNMPDE_BUILD_TESTS=ON
+
+      - name: Build laboratories and tests
+        run: cmake --build build --parallel 2
+
+      - name: Run tests and generate course figures
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Verify generated figures
+        run: |
+          test -s notes/assets/generated/lecture-01-poisson-mesh.svg
+          test -s notes/assets/generated/lab-01-refined-mesh.svg
+
+      - name: Upload generated figures
+        if: inputs.upload-figures
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-course-figures
+          path: notes/assets/generated/
+          if-no-files-found: error
