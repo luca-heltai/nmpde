@@ -54,6 +54,7 @@
 /registro_metodi_numerici_pdes.xls
 
 # Generated laboratory outputs outside the book asset directory
+/output/
 /labs/lab-01/lab-01
 /labs/lab-01/*.vtk
 /labs/convergence_graphs/*.pdf

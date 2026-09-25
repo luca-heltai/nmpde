@@ -8,17 +8,19 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 option(NMPDE_BUILD_LABS "Build the course laboratory executables" ON)
+option(NMPDE_BUILD_DEALII_LABS
+       "Build the deal.II-based laboratory executables"
+       ON)
 option(NMPDE_BUILD_TESTS "Build the GoogleTest suite and asset generators" ON)
 
-if(NMPDE_BUILD_LABS OR NMPDE_BUILD_TESTS)
+if(NMPDE_BUILD_DEALII_LABS OR NMPDE_BUILD_TESTS)
   find_package(deal.II 9.7.1 REQUIRED
     HINTS ${deal.II_DIR} $ENV{DEAL_II_DIR}
   )
   deal_ii_initialize_cached_variables()
 endif()
 
-set(NMPDE_LAB_TARGETS
-  lab-01
+set(NMPDE_DEALII_LAB_TARGETS
   lab-02
   lab-03
   lab-04
@@ -34,7 +36,12 @@ set(NMPDE_LAB_TARGETS
 )
 
 if(NMPDE_BUILD_LABS)
-  foreach(lab IN LISTS NMPDE_LAB_TARGETS)
+  add_executable(lab-01 "labs/lab-01/lab-01.cc")
+  target_compile_features(lab-01 PRIVATE cxx_std_17)
+endif()
+
+if(NMPDE_BUILD_LABS AND NMPDE_BUILD_DEALII_LABS)
+  foreach(lab IN LISTS NMPDE_DEALII_LAB_TARGETS)
     add_executable(${lab} "labs/${lab}/${lab}.cc")
     deal_ii_setup_target(${lab})
   endforeach()

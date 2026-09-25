@@ -3,8 +3,10 @@ BUILD_DIR ?= build
 CMAKE ?= cmake
 CTEST ?= ctest
 CMAKE_GENERATOR ?= Ninja
+PYTHON ?= python3
+PORT ?= 8000
 
-.PHONY: all configure labs test assets build site clean latex show
+.PHONY: all configure labs test assets build site serve clean latex show
 
 all: assets site
 
@@ -24,6 +26,10 @@ site:
 	cd notes && BASE_URL="$${BASE_URL:-}" ../$(JUPYTER_BOOK) build --html --strict --ci --check-links
 
 build: site
+
+serve: site
+	@echo "Serving notes/_build/html at http://127.0.0.1:$(PORT)/"
+	cd notes/_build/html && $(PYTHON) -m http.server "$(PORT)" --bind 127.0.0.1
 
 show: site
 	cd notes && ../$(JUPYTER_BOOK) start
