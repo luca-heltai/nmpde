@@ -1,7 +1,7 @@
 ---
-title: Laboratory 5 — A robust Poisson solver
+title: Laboratory 5 — The Poisson equation
 ---
 
 ```{include} ../../labs/lab-05/README.md
-:start-after: "# Lab 5: Improving the Poisson Solver (ParsedConvergenceTable and AffineConstraints)"
+:start-after: # Lab: Solving the Poisson Equation in deal.II
 ```

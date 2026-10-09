@@ -1,7 +1,7 @@
 ---
-title: Laboratory 7 — A posteriori error estimation
+title: Laboratory 7 — Vector-valued finite elements
 ---
 
 ```{include} ../../labs/lab-07/README.md
-:start-after: "# Lab: Error Estimation using MeshWorker::mesh_loop"
+:start-after: # Lab: Vector-Valued Finite Element Spaces in Linear Elasticity
 ```

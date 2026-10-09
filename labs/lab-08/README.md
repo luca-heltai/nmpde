@@ -1,81 +1,73 @@
-# Lab: From CG Poisson to DG Poisson (SIPG)
+# Lab: Error Estimation using MeshWorker::mesh_loop
 
 ## Overview
 
-In this lab, you will use `MeshWorker::mesh_loop` to efficiently assemble the system matrix and right-hand side, handle boundary contributions using the Nitsche method, and implement face contributions to assemble the Symmetric Interior Penalty Galerkin (SIPG) method. This exercise will help you understand how to integrate cell and face terms and apply adaptive refinement based on error estimates.
+In this lab, you will extend the work from Lab 6 to implement the theoretical error estimator and use it for adaptive mesh refinement. You will use `MeshWorker::mesh_loop` to efficiently assemble the error estimator and handle face integrals, especially when dealing with hanging nodes. This exercise will help you understand how to integrate face terms and apply adaptive refinement based on error estimates.
 
-## Exercises
+## Exercise: Implementing Advanced Error Estimator
 
-### Exercise 1: Replacing the Manually Written Assemble Loop with MeshWorker::mesh_loop
-
-#### Objective
-
-Replace the manually written assemble loop with `MeshWorker::mesh_loop` to handle the assembly process more efficiently.
-
-#### Steps
-
-1. **Setup Scratch and Copy Data:**
-   - Use `MeshWorker::ScratchData` and `MeshWorker::CopyData` structures to store intermediate data during the loop over cells and faces.
-
-2. **Define Cell Worker Function:**
-   - Create a cell worker function that assembles the local system matrix and right-hand side for CG methods.
-
-3. **Define Copier Function:**
-   - Create a copier function to transfer local contributions to the global system.
-
-4. **Run Mesh Loop:**
-   - Replace the manual assembly loop with `MeshWorker::mesh_loop` using the defined worker and copier functions.
-
-### Exercise 2: Add Boundary Contributions to assemble boundary terms Using Nitsche Method
-
-#### Objective
-
-Incorporate boundary contributions using the Nitsche method for weakly imposing Dirichlet boundary conditions.
-
-#### Steps
-
-1. **Setup Face Scratch Data:**
-   - Initialize `MeshWorker::ScratchData` to include face integration rules and update flags for boundary terms.
-
-2. **Define Boundary Face Worker Function:**
-   - Create a boundary face worker function that assembles the boundary contributions using the Nitsche method. Remember, for CG with imposition of boundary conditions with constraints, the weak form looks like
-
-   $$
-   (\nabla u, \nabla v) = (f,v) \qquad \forall v \in V
-   $$
-
-   while for CG with Nitsche boundary conditions, the weak form looks like:
-
-   $$
-   (\nabla u, \nabla v) - <n\cdot \nabla u, v>  - <u, n\cdot \nabla v> +\frac{\gamma}{h}<u,v> = (f,v)
-   - <g, n\cdot \nabla v> + \frac{\gamma}{h}<g,v>
-   \qquad \forall v \in V
-   $$
-   where we indicate with $(\cdot, \cdot)$ the $L^2$ scalar product in $\Omega$ and with $<\cdot, \cdot>$ the $L^2$ scalar product on the Dirichlet part of the boundary $\partial \Omega_D$.
-
-3. **Run Mesh Loop:**
-   - Extend `MeshWorker::mesh_loop` to include the boundary face worker function for boundary term assembly.
-
-### Exercise 3: Add Face Contributions to the Loop for SIPG Method
-
-#### Objective
-
-Extend the assembly process to include face contributions for the Symmetric Interior Penalty Galerkin (SIPG) method (to read more, take a look at step-12 of the deal.II library).
-
-Remember: SIPG is an extension of the Nitsche method implemented above with the addition of the following face terms:
+The goal of this exercise is to use `MeshWorker::mesh_loop` to assemble the error estimator defined in class:
 
 $$
-- <\{\!\{\nabla u\}\!\}, [\![v]\!]>_{\mathcal E^0} - <[\![u]\!], \{\!\{\nabla v\}\!\}>_{\mathcal E^0} +\frac{\gamma}{h}<[\![u]\!],[\![v]\!]>_{\mathcal E^0}
+\eta_T = h_T \| f + \Delta u_h \|_{L^2(T)} + \sum_{F \in \partial T} \frac12 h_F^{1/2} \| [\nabla u_h] \|_{L^2(F)}
 $$
-where we indicate with $\mathcal E^0$ the set of the interior faces, and with $<\cdot, \cdot>$ the $L^2$ scalar product on the co-dimension one faces.
 
-#### Steps
+### Starting Point
 
-1. **Setup Face Scratch Data:**
-   - Extend `MeshWorker::ScratchData` to include face integration rules and update flags for face terms.
+Start from the provided `experiments.cc` file, which demonstrates the use of `MeshWorker::mesh_loop` to compute face integrals. Your task is to integrate this approach into the error estimation for the Poisson problem.
 
-2. **Define Interior Face Worker Function:**
-   - Create an interior face worker function that assembles the SIPG contributions for the interior faces.
+### Key Concepts
 
-3. **Run Mesh Loop:**
-   - Extend `MeshWorker::mesh_loop` to include the interior face worker function for SIPG term assembly.
+1. **MeshWorker::mesh_loop**:
+   - This function simplifies the loop over cells and faces, allowing you to define custom cell and face integrals efficiently.
+
+2. **Error Estimator**:
+   - Implement an error estimator that combines volume and face terms, especially useful for adaptive refinement.
+
+3. **Handling Hanging Nodes**:
+   - Properly integrate face terms in the presence of hanging nodes using `MeshWorker::mesh_loop`.
+
+### Steps
+
+1. **Define the Error Estimator**:
+   - Implement the error estimator using `MeshWorker::mesh_loop` based on the definition provided in class.
+
+2. **Integrate Face Terms**:
+   - Use `MeshWorker::mesh_loop` to compute face terms, ensuring correct handling of hanging nodes.
+
+3. **Adaptive Refinement**:
+   - Use the error estimates to mark and refine the mesh adaptively.
+
+### Explanation: Using `MeshWorker::mesh_loop` for Error Estimation
+
+`MeshWorker::mesh_loop` is used to handle the assembly of both cell and face integrals efficiently, especially when dealing with hanging nodes. Here are the key steps involved:
+
+1. **Define Scratch and Copy Data**:
+   - `MeshWorker::ScratchData` is used to store intermediate data during the loop over cells and faces.
+   - `MeshWorker::CopyData` is used to store the local contributions that will be copied to the global system.
+
+2. **Cell Worker Function**:
+   - This function assembles the cell integrals by looping over the quadrature points and shape functions.
+
+3. **Face Worker Function**:
+   - This function assembles the face integrals, which are important for computing the jump terms in the error estimator.
+
+4. **Copier Function**:
+   - This function copies the local contributions to the global system, applying constraints as needed.
+
+5. **Run the Mesh Loop**:
+   - `MeshWorker::mesh_loop` is called with the defined worker and copier functions to perform the assembly.
+
+By following these steps and using `MeshWorker::mesh_loop`, you can efficiently assemble the error estimator and handle complex mesh configurations with hanging nodes. This approach simplifies the implementation and ensures accurate computation of both cell and face terms in the error estimator.
+
+### Additional Exercise: Advanced Error Estimation with `MeshWorker::mesh_loop`
+
+1. **Implement the Error Estimator**:
+   - Extend the `estimate` method to fully implement the advanced error estimator using `MeshWorker::mesh_loop`.
+
+2. **Integrate with Adaptive Refinement**:
+   - Use the computed error estimates to mark cells for refinement and perform adaptive mesh refinement.
+
+3. **Analyze Results**:
+   - Compare the results of adaptive refinement with uniform refinement, and analyze the efficiency and accuracy of the solution.
+   - Compare your error estimator with the Kelly error estimator. Do you see any noticeable differences?

@@ -6,7 +6,7 @@
 
 * * * * *
 
-1. Start the assignment from lab-04 (a modified version of step-4)
+1. Start the assignment from lab-05 (a modified version of step-4)
     <https://www.dealii.org/current/doxygen/deal.II/step_4.html>
 
 2. Add parameters to the program to compute $L^2$ and $H^1$ errors w.r.t. to a

@@ -1,28 +1,19 @@
-#include <deal.II/base/function.h>
 #include <deal.II/base/function_lib.h>
-#include <deal.II/base/function_parser.h>
-#include <deal.II/base/logstream.h>
-#include <deal.II/base/parameter_handler.h>
-#include <deal.II/base/quadrature_lib.h>
+#include <deal.II/base/point.h>
 
 #include <deal.II/dofs/dof_handler.h>
-#include <deal.II/dofs/dof_tools.h>
 
+#include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_values.h>
+#include <deal.II/fe/mapping_q.h>
 
 #include <deal.II/grid/grid_generator.h>
+#include <deal.II/grid/grid_out.h>
 #include <deal.II/grid/tria.h>
 
-#include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/vector.h>
 
 #include <deal.II/numerics/data_out.h>
-#include <deal.II/numerics/matrix_tools.h>
 #include <deal.II/numerics/vector_tools.h>
 
 #include <fstream>
@@ -30,257 +21,118 @@
 
 using namespace dealii;
 
-template <int dim>
-struct PoissonParameters
-{
-  PoissonParameters()
-  {
-    prm.enter_subsection("Poisson parameters");
-    {
-      prm.add_parameter("Finite element degree", fe_degree);
-      prm.add_parameter("Initial refinement", initial_refinement);
-      prm.add_parameter("Number of cycle", n_cycles);
-      prm.add_parameter("Exact solution expression", exact_solution_expression);
-      prm.add_parameter("Right hand side expression", rhs_expression);
-    }
-    prm.leave_subsection();
-
-    try
-      {
-        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
-      }
-    catch (std::exception &exc)
-      {
-        prm.print_parameters("poisson_" + std::to_string(dim) + "d.prm");
-        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
-      }
-    std::map<std::string, double> constants;
-    constants["pi"] = numbers::PI;
-    exact_solution.initialize(FunctionParser<dim>::default_variable_names(),
-                              {exact_solution_expression},
-                              constants);
-    rhs_function.initialize(FunctionParser<dim>::default_variable_names(),
-                            {rhs_expression},
-                            constants);
-  }
-  unsigned int fe_degree                 = 1;
-  unsigned int initial_refinement        = 3;
-  unsigned int n_cycles                  = 1;
-  std::string  exact_solution_expression = "cos(pi*x)*cos(pi*y)";
-  std::string  rhs_expression            = "2*pi*pi*cos(pi*x)*cos(pi*y)";
-
-  FunctionParser<dim> exact_solution;
-  FunctionParser<dim> rhs_function;
-
-  ParameterHandler prm;
-};
-
-
-
-template <int dim>
-class Poisson
-{
-public:
-  Poisson(const PoissonParameters<dim> &parameters);
-  void
-  run();
-
-private:
-  void
-  make_grid();
-  void
-  setup_system();
-  void
-  assemble_system();
-  void
-  solve();
-  void
-  output_results() const;
-
-  const PoissonParameters<dim> &par;
-
-  Triangulation<dim> triangulation;
-  FE_Q<dim>          fe;
-  DoFHandler<dim>    dof_handler;
-
-  SparsityPattern      sparsity_pattern;
-  SparseMatrix<double> system_matrix;
-
-  Vector<double> solution;
-  Vector<double> system_rhs;
-};
-
-
-
-template <int dim>
-Poisson<dim>::Poisson(const PoissonParameters<dim> &par)
-  : par(par)
-  , fe(par.fe_degree)
-  , dof_handler(triangulation)
-{}
-
-
-
-template <int dim>
-void
-Poisson<dim>::make_grid()
-{
-  GridGenerator::hyper_cube(triangulation, -1, 1);
-  triangulation.refine_global(par.initial_refinement);
-
-  std::cout << "   Number of active cells: " << triangulation.n_active_cells()
-            << std::endl
-            << "   Total number of cells: " << triangulation.n_cells()
-            << std::endl;
-}
-
-
-template <int dim>
-void
-Poisson<dim>::setup_system()
-{
-  dof_handler.distribute_dofs(fe);
-
-  std::cout << "   Number of degrees of freedom: " << dof_handler.n_dofs()
-            << std::endl;
-
-  DynamicSparsityPattern dsp(dof_handler.n_dofs());
-  DoFTools::make_sparsity_pattern(dof_handler, dsp);
-  sparsity_pattern.copy_from(dsp);
-
-  system_matrix.reinit(sparsity_pattern);
-
-  solution.reinit(dof_handler.n_dofs());
-  system_rhs.reinit(dof_handler.n_dofs());
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::assemble_system()
-{
-  QGauss<dim> quadrature_formula(fe.degree + 1);
-
-  FEValues<dim> fe_values(fe,
-                          quadrature_formula,
-                          update_values | update_gradients |
-                            update_quadrature_points | update_JxW_values);
-
-  const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
-
-  FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
-  Vector<double>     cell_rhs(dofs_per_cell);
-
-  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-
-  for (const auto &cell : dof_handler.active_cell_iterators())
-    {
-      fe_values.reinit(cell);
-      cell_matrix = 0;
-      cell_rhs    = 0;
-
-      for (const unsigned int q_index : fe_values.quadrature_point_indices())
-        for (const unsigned int i : fe_values.dof_indices())
-          {
-            for (const unsigned int j : fe_values.dof_indices())
-              cell_matrix(i, j) +=
-                (fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
-                 fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
-                 fe_values.JxW(q_index));           // dx
-
-            const auto &x_q = fe_values.quadrature_point(q_index);
-            cell_rhs(i) += (fe_values.shape_value(i, q_index) * // phi_i(x_q)
-                            par.rhs_function.value(x_q) *       // f(x_q)
-                            fe_values.JxW(q_index));            // dx
-          }
-
-      cell->get_dof_indices(local_dof_indices);
-      for (const unsigned int i : fe_values.dof_indices())
-        {
-          for (const unsigned int j : fe_values.dof_indices())
-            system_matrix.add(local_dof_indices[i],
-                              local_dof_indices[j],
-                              cell_matrix(i, j));
-
-          system_rhs(local_dof_indices[i]) += cell_rhs(i);
-        }
-    }
-
-  std::map<types::global_dof_index, double> boundary_values;
-  VectorTools::interpolate_boundary_values(dof_handler,
-                                           0,
-                                           par.exact_solution,
-                                           boundary_values);
-  MatrixTools::apply_boundary_values(boundary_values,
-                                     system_matrix,
-                                     solution,
-                                     system_rhs);
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::solve()
-{
-  SolverControl            solver_control(1000, 1e-12);
-  SolverCG<Vector<double>> solver(solver_control);
-  solver.solve(system_matrix, solution, system_rhs, PreconditionIdentity());
-
-  std::cout << "   " << solver_control.last_step()
-            << " CG iterations needed to obtain convergence." << std::endl;
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::output_results() const
-{
-  DataOut<dim> data_out;
-
-  data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(solution, "solution");
-
-  data_out.build_patches();
-
-  std::ofstream output(dim == 2 ? "solution-2d.vtu" : "solution-3d.vtu");
-  data_out.write_vtu(output);
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::run()
-{
-  std::cout << "Solving problem in " << dim << " space dimensions."
-            << std::endl;
-
-  make_grid();
-  setup_system();
-  assemble_system();
-  solve();
-  output_results();
-}
-
-
+/**
+ * Aim for this lab:
+ *
+ * 1. Create a triangulation
+ * 2. Create a DoFHandler
+ * 3. Create a finite element
+ * 4. Distribute the degrees of freedom
+ * 5. Interpolate a Function on the finite dimensional space
+ * 6. Output the solution (using DataOut)
+ * 7. Compute the $L^2$ error of the solution manually (looping over cells)
+ * 8. Output the error
+ * 9. Compute the $L^2$ error of the solution using
+ * VectorTools::integrate_difference
+ * 10. Check that the two coincide!
+ * 11. Plug everything inside a function, and build a graph of the error as a
+ * function of the number of degrees of freedom, refining the triangulation a
+ * few times globally
+ */
 
 int
 main()
 {
-  {
-    PoissonParameters<2> par;
-    Poisson<2>           laplace_problem_2d(par);
-    laplace_problem_2d.run();
-  }
+  Triangulation<2> triangulation;
+  FE_Q<2>          fe(2);
+  DoFHandler<2>    dof_handler(triangulation);
+  GridGenerator::hyper_cube(triangulation, -2, 2);
+  triangulation.refine_global(3);
 
-  {
-    PoissonParameters<3> par;
-    Poisson<3>           laplace_problem_3d(par);
-    laplace_problem_3d.run();
-  }
+  dof_handler.distribute_dofs(fe);
 
-  return 0;
+  // Interpolate the cosine function on this space.
+  Vector<double> solution(dof_handler.n_dofs());
+  Vector<double> solution_hand_made(dof_handler.n_dofs());
+  // Use interpolate to fill the solution vector with the values of the
+  // function at the degrees of freedom.
+  Functions::CosineFunction<2> cosine;
+
+  VectorTools::interpolate(dof_handler, cosine, solution);
+
+  // We fill solution_hand_made with the correct values of the function.
+  auto local_support_points = fe.get_unit_support_points();
+
+  // Mapping from reference to real cell
+  MappingQ<2> mapping(fe.degree);
+
+  // Global numbering of degrees of freedom.
+  std::vector<types::global_dof_index> local_to_global(fe.dofs_per_cell);
+
+
+  for (const auto &cell : dof_handler.active_cell_iterators())
+    {
+      cell->get_dof_indices(local_to_global);
+      for (unsigned int i = 0; i < fe.dofs_per_cell; ++i)
+        {
+          const auto global_index = local_to_global[i];
+          const auto point =
+            mapping.transform_unit_to_real_cell(cell, local_support_points[i]);
+          solution_hand_made[global_index] = cosine.value(point);
+        }
+    }
+
+  // First check that we get the same result of deal.II
+  auto error = solution;
+  error -= solution_hand_made;
+  std::cout << "Error of hand made solution: " << error.l2_norm() << std::endl;
+
+  // Now we compute the L2 error
+  QGauss<2> quadrature_formula(fe.degree + 1);
+
+  // Construct a FEValues object to evaluate the shape functions and the
+  // Jacobian of the transformation from the reference cell to the real cell.
+  FEValues<2> fe_values(mapping,
+                        fe,
+                        quadrature_formula,
+                        update_values | update_quadrature_points |
+                          update_JxW_values);
+
+  double error_L2 = 0;
+
+  std::vector<double> local_values(fe_values.n_quadrature_points);
+
+  for (const auto &cell : dof_handler.active_cell_iterators())
+    {
+      fe_values.reinit(cell);
+      double local_cell_error = 0;
+      // Computes v[q] = sum_i u_[local_to_global[i]] phi_i(q)
+      fe_values.get_function_values(solution, local_values);
+
+      for (unsigned int q = 0; q < fe_values.n_quadrature_points; ++q)
+        {
+          // compute difference of the two solutions at the quadrature point
+          // int_{T} (u_h - u)^2 dx
+          local_cell_error +=
+            (local_values[q] - cosine.value(fe_values.quadrature_point(q))) *
+            (local_values[q] - cosine.value(fe_values.quadrature_point(q))) *
+            fe_values.JxW(q);
+        }
+      error_L2 += local_cell_error;
+    }
+  error_L2 = std::sqrt(error_L2);
+  std::cout << "Ndofs:  " << dof_handler.n_dofs() << std::endl;
+  std::cout << "L2 interpolation error " << error_L2 << std::endl;
+
+  DataOut<2> data_out;
+
+  DataOutBase::VtkFlags flags;
+  flags.write_higher_order_cells = true;
+  data_out.set_flags(flags);
+
+  data_out.attach_dof_handler(dof_handler);
+  data_out.add_data_vector(solution, "solution");
+  data_out.build_patches(fe.degree);
+  std::ofstream output("solution.vtu");
+  data_out.write_vtu(output);
 }

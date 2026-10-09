@@ -1,112 +1,82 @@
-#include <deal.II/base/point.h>
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/grid_out.h>
-#include <deal.II/grid/tria.h>
-
+#include <array>
+#include <cmath>
 #include <filesystem>
 #include <fstream>
+#include <iomanip>
 #include <iostream>
-#include <stdexcept>
-#include <string>
-#include <vector>
 
-using namespace dealii;
 namespace fs = std::filesystem;
 
-/** Count the faces on the boundary without managing connectivity arrays. */
-unsigned int
-count_boundary_faces(const Triangulation<2> &tria)
+/** A small, dimension-independent point class.
+ *
+ * The dimension is a compile-time parameter. The Number parameter makes the
+ * same class usable with, for example, float or double coordinates.
+ */
+template <int dim, typename Number = double>
+class Point
 {
-  unsigned int count = 0;
-  for (const auto &cell : tria.active_cell_iterators())
-    for (unsigned int f = 0; f < cell->n_faces(); ++f)
-      if (cell->face(f)->at_boundary())
-        ++count;
-  return count;
+public:
+  Number &
+  operator[](const std::size_t index)
+  {
+    return coordinates_.at(index);
+  }
+
+  const Number &
+  operator[](const std::size_t index) const
+  {
+    return coordinates_.at(index);
+  }
+
+private:
+  std::array<Number, dim> coordinates_{};
+};
+
+
+/** Evaluate a simple scalar field on a two-dimensional point. */
+template <int dim, typename Number>
+Number
+scalar_field(const Point<dim, Number> &point)
+{
+  static_assert(dim == 2, "This first example is two-dimensional.");
+
+  constexpr Number pi = static_cast<Number>(3.14159265358979323846);
+  return std::sin(pi * point[0]) * std::sin(pi * point[1]);
 }
 
-/** Show how objects expose vertices and faces. */
-void
-inspect_cells(const Triangulation<2> &tria)
-{
-  unsigned int cell_number = 0;
-  for (const auto &cell : tria.active_cell_iterators())
-    {
-      std::cout << "Cell " << cell_number++
-                << ", center: " << cell->center() << '\n';
-      for (unsigned int v = 0; v < cell->n_vertices(); ++v)
-        std::cout << "  vertex " << v << ": " << cell->vertex(v) << '\n';
-
-      for (unsigned int f = 0; f < cell->n_faces(); ++f)
-        {
-          const auto face = cell->face(f);
-          std::cout << "  face " << f
-                    << ", boundary: " << face->at_boundary();
-          if (face->at_boundary())
-            std::cout << ", boundary id: " << face->boundary_id();
-          std::cout << '\n';
-        }
-    }
-}
-
-/** Export a geometric mesh (not a finite element solution). */
-void
-write_mesh(const Triangulation<2> &tria, const fs::path &filename)
-{
-  fs::create_directories(filename.parent_path());
-  std::ofstream output(filename);
-  if (!output)
-    throw std::runtime_error("Cannot open " + filename.string());
-  GridOut grid_out;
-  grid_out.write_vtk(tria, output);
-}
 
 int
 main(int argc, char **argv)
 {
-  try
+  constexpr int         dim             = 2;
+  constexpr std::size_t points_per_axis = 21;
+  const fs::path output_path = argc > 1 ? fs::path(argv[1]) : "field.csv";
+
+  if (output_path.has_parent_path())
+    fs::create_directories(output_path.parent_path());
+
+  std::ofstream output(output_path);
+  if (!output)
     {
-      const std::string mode = argc > 1 ? argv[1] : "rectangle";
-      if (argc > 2 ||
-          (mode != "rectangle" && mode != "shell-flat" &&
-           mode != "shell-curved"))
-        {
-          std::cerr << "Usage: lab-01 [rectangle|shell-flat|shell-curved]\n";
-          return 1;
-        }
-
-      Triangulation<2> tria;
-      if (mode == "rectangle")
-        {
-          GridGenerator::subdivided_hyper_rectangle(
-            tria,
-            std::vector<unsigned int>{2, 1},
-            Point<2>(0., 0.),
-            Point<2>(2., 1.));
-          inspect_cells(tria);
-        }
-      else
-        {
-          // hyper_shell attaches a SphericalManifold by default.
-          GridGenerator::hyper_shell(tria, Point<2>(), 1., 2., 8);
-          if (mode == "shell-flat")
-            // Retain the coarse mesh but use flat geometry to refine it.
-            tria.reset_all_manifolds();
-          tria.refine_global(2);
-        }
-
-      std::cout << "Active cells: " << tria.n_active_cells()
-                << "\nVertices: " << tria.n_vertices()
-                << "\nBoundary faces: " << count_boundary_faces(tria)
-                << '\n';
-
-      const fs::path output = fs::path("output") / (mode + ".vtk");
-      write_mesh(tria, output);
-      std::cout << "Wrote " << output << '\n';
-    }
-  catch (const std::exception &exception)
-    {
-      std::cerr << "Error: " << exception.what() << '\n';
+      std::cerr << "Could not open " << output_path << '\n';
       return 1;
     }
+
+  output << "x,y,u\n";
+  output << std::setprecision(16);
+
+  for (std::size_t j = 0; j < points_per_axis; ++j)
+    for (std::size_t i = 0; i < points_per_axis; ++i)
+      {
+        Point<dim> point;
+        point[0] = static_cast<double>(i) / (points_per_axis - 1);
+        point[1] = static_cast<double>(j) / (points_per_axis - 1);
+
+        output << point[0] << ',' << point[1] << ',' << scalar_field(point)
+               << '\n';
+      }
+
+  std::cout << "Generated " << points_per_axis * points_per_axis
+            << " samples in " << output_path << '\n';
+  std::cout << "Point<" << dim << "> uses double coordinates.\n";
 }

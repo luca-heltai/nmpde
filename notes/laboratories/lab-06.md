@@ -1,7 +1,7 @@
 ---
-title: Laboratory 6 — Vector-valued finite elements
+title: Laboratory 6 — A robust Poisson solver
 ---
 
 ```{include} ../../labs/lab-06/README.md
-:start-after: "# Lab: Vector-Valued Finite Element Spaces in Linear Elasticity"
+:start-after: # Lab 6: Improving the Poisson Solver (ParsedConvergenceTable and AffineConstraints)
 ```
