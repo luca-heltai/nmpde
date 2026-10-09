@@ -58,7 +58,7 @@ whether application programmers must handle it explicitly.
 ## 2. A complete VTK file (20 minutes)
 
 Open the repository file
-[`labs/lab-02/data/two-quads.vtk`](https://github.com/luca-heltai/nmpde/blob/lab-01-mesh-abstraction-vtk-manifolds/labs/lab-02/data/two-quads.vtk)
+[`labs/lab-02/data/two-quads.vtk`](https://github.com/luca-heltai/nmpde/blob/4aafd73a036530d7f011f23a1e3e1992eaf97d73/labs/lab-02/data/two-quads.vtk)
 with a text editor. Here is the complete file:
 
 ```text
@@ -111,7 +111,7 @@ Reference: [VTK legacy file format](https://docs.vtk.org/en/latest/vtk_file_form
 
 ## 3. From arrays to a mesh object (15 minutes)
 
-Open [`labs/lab-02/lab-02.cc`](https://github.com/luca-heltai/nmpde/blob/lab-01-mesh-abstraction-vtk-manifolds/labs/lab-02/lab-02.cc).
+Open [`labs/lab-02/lab-02.cc`](https://github.com/luca-heltai/nmpde/blob/4aafd73a036530d7f011f23a1e3e1992eaf97d73/labs/lab-02/lab-02.cc).
 The code creates an equivalent mesh:
 
 ```cpp
