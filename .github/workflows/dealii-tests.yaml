@@ -36,7 +36,9 @@ jobs:
       - name: Verify generated figures
         run: |
           test -s notes/assets/generated/lecture-01-poisson-mesh.svg
-          test -s notes/assets/generated/lab-01-refined-mesh.svg
+          test -s notes/assets/generated/lab-01-two-quads.svg
+          test -s notes/assets/generated/lab-01-flat-shell.svg
+          test -s notes/assets/generated/lab-01-curved-shell.svg
 
       - name: Upload generated figures
         if: inputs.upload-figures

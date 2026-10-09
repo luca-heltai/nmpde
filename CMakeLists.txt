@@ -21,6 +21,7 @@ if(NMPDE_BUILD_DEALII_LABS OR NMPDE_BUILD_TESTS)
 endif()
 
 set(NMPDE_DEALII_LAB_TARGETS
+  lab-01
   lab-02
   lab-03
   lab-04
@@ -34,11 +35,6 @@ set(NMPDE_DEALII_LAB_TARGETS
   lab-08
   lab-09
 )
-
-if(NMPDE_BUILD_LABS)
-  add_executable(lab-01 "labs/lab-01/lab-01.cc")
-  target_compile_features(lab-01 PRIVATE cxx_std_17)
-endif()
 
 if(NMPDE_BUILD_LABS AND NMPDE_BUILD_DEALII_LABS)
   foreach(lab IN LISTS NMPDE_DEALII_LAB_TARGETS)

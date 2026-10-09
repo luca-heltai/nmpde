@@ -1,458 +1,303 @@
 ---
-title: "Laboratory 1 — From a C++ Source File to a Visualized Data Set"
+title: "Laboratory 1 — Meshes, connectivity, and deal.II abstractions"
 ---
 
-This first laboratory is a practical introduction to the tools that we will
-use throughout the course. We will synchronize the course material with Git,
-edit a C++ source file in VS Code, configure and build it with CMake, generate
-a small CSV data set, and inspect the result in ParaView.
+In this first deal.II laboratory we investigate the **mesh itself**: its
+geometric entities, topological relations and representation in software.
+We will not yet use finite element spaces, basis functions, or degrees of
+freedom. We will first look inside a simple file, then see how deal.II hides
+the bookkeeping behind an object-oriented interface.
 
-The example deliberately does **not** use deal.II yet. Before using a finite
-element library, it is useful to understand the complete workflow with a
-small, self-contained program.
+**Guiding question:** *If you had to represent a mesh in a computer program,
+what information would you need to store?*
 
 ## Learning objectives
 
-By the end of this laboratory, you should be able to:
+By the end of the lesson you should be able to:
 
-- update a local copy of the course material with `git pull`;
-- open a project folder and edit source files in VS Code;
-- read a minimal `CMakeLists.txt` file;
-- configure and build an out-of-source C++ project;
-- recognize a class template such as `Point<dim, Number>`;
-- generate a human-readable CSV file from a C++ program;
-- load a CSV file in ParaView and turn its rows into points.
-- construct a simple 2D contour pipeline from CSV data;
-- extend the program to three dimensions and experiment with 3D isosurfaces
-  and opacity.
+- distinguish vertices, cells, faces, coordinates and connectivity;
+- read a small legacy ASCII VTK `UNSTRUCTURED_GRID`;
+- explain why two cells share a face even when it is not listed separately;
+- construct a `Triangulation<2>` with `GridGenerator`;
+- iterate over active cells, vertices and faces via object methods;
+- count boundary faces without reconstructing a neighbour table;
+- export a mesh with `GridOut` and inspect it in ParaView;
+- explain why a curved geometry may require a `Manifold` when refining.
 
-The course repository is maintained by the lecturer. You do not need to push
-your laboratory work to the lecturer's repository. Git is used here primarily
-to keep your local copy of the lectures and laboratories synchronized.
+**Not covered today:** `FE_Q`, `DoFHandler`, shape functions, degrees of
+freedom, refinement hierarchies, and algorithms for mesh storage.
 
-## 1. Synchronizing the course material with Git
+## 1. What is a mesh? (10 minutes)
 
-Clone the repository once, before the first laboratory:
-
-```bash
-git clone https://github.com/luca-heltai/nmpde.git
-cd nmpde
-```
-
-Before every subsequent lecture or laboratory, update the local copy:
-
-```bash
-git pull --ff-only
-git status
-```
-
-The `--ff-only` option makes the intended workflow explicit: the course copy
-should follow the lecturer's repository without creating a merge commit. If
-you have modified a file inside the course copy, save that work elsewhere
-before pulling or ask the lecturer for help.
-
-A convenient arrangement is to keep two directories:
+Consider the domain $[0,2]\times[0,1]$, divided into two quadrilaterals.
+Number the six vertices like this:
 
 ```text
-nmpde/          # the read-only course copy, updated with git pull
-my-labs/        # your personal solutions and experiments
+3 -------- 4 -------- 5
+|          |          |
+|  cell 0  |  cell 1  |
+|          |          |
+0 -------- 1 -------- 2
 ```
 
-For this laboratory, the reference source is in
-`labs/lab-01/lab-01.cc`. You may copy it to a personal directory before
-modifying it. Local commits and a personal repository are optional; neither
-is a contribution to the lecturer's repository.
+Ask the class: where would you store vertex coordinates? How would you
+describe which vertices belong to each cell? How would you find a neighbouring
+cell or decide that a face is on the boundary?
 
-The official [Git documentation on creating a repository](https://git-scm.com/book/en/v2/Git-Basics-Getting-a-Git-Repository)
-and the [VS Code source-control overview](https://code.visualstudio.com/docs/sourcecontrol/overview)
-are useful references.
+This mesh has **6 vertices**, **2 quadrilateral cells**, and **7 distinct
+faces**: 6 on the boundary and 1 shared. If you walk around both cells,
+however, you visit 8 *cell-face incidences*. The internal face belongs to
+both cells. The distinction between a geometric entity and its incidences
+is fundamental.
 
-## 2. Opening the project in VS Code
+A MATLAB-style representation might store one array of vertex coordinates,
+another array of cell-to-vertex connectivity, and perhaps arrays for faces
+and adjacency. All of this data must exist in some form; the question is
+whether application programmers must handle it explicitly.
 
-Open the repository folder, rather than only opening a single source file:
+## 2. A complete VTK file (20 minutes)
 
-```bash
-code .
-```
-
-If the `code` command is not available, open the folder using **File → Open
-Folder**. The integrated terminal should start in the project directory.
-
-The most useful areas for this course are:
-
-- the Explorer, for navigating files and folders;
-- the editor, for changing source files;
-- the Source Control view, for seeing local changes;
-- the integrated terminal, for running Git, CMake, and executables;
-- the Problems view, for reading compiler diagnostics.
-
-```{figure} ../assets/lab-01/vscode-user-interface.png
-:alt: The main areas of the Visual Studio Code user interface
-:width: 95%
-:name: fig:lab-01-vscode-interface
-
-The VS Code interface: Explorer, editor, views, status bar, and integrated
-terminal. Image from the official
-[VS Code user-interface tutorial](https://code.visualstudio.com/docs/editing/getting-started/userinterface).
-```
-
-For the first laboratory, use VS Code as an editor and as a convenient window
-on the terminal. The actual build commands are intentionally visible: this
-makes it easier to diagnose problems later on a remote machine or in a
-container.
-
-## 3. The project layout
-
-The relevant part of the repository is:
+Open the repository file
+[`labs/lab-01/data/two-quads.vtk`](https://github.com/luca-heltai/nmpde/blob/main/labs/lab-01/data/two-quads.vtk)
+with a text editor. Here is the complete file:
 
 ```text
-labs/lab-01/
-├── CMakeLists.txt       # the build description for this small project
-├── lab-01.cc            # the C++ source file
-└── README.md            # a short description of the exercise
+# vtk DataFile Version 3.0
+Two adjacent quadrilaterals
+ASCII
+DATASET UNSTRUCTURED_GRID
+POINTS 6 float
+0 0 0
+1 0 0
+2 0 0
+0 1 0
+1 1 0
+2 1 0
+CELLS 2 10
+4 0 1 4 3
+4 1 2 5 4
+CELL_TYPES 2
+9
+9
 ```
 
-In the course repository the executable is built by the top-level
-`CMakeLists.txt`. The standalone `CMakeLists.txt` shown below is the minimal
-version of the same idea and can also be used in a separate personal copy.
+**Interpretation:**
 
-```cmake
-cmake_minimum_required(VERSION 3.16)
+- `POINTS 6 float` gives the coordinates of six points. VTK uses three
+  coordinates here; the third is zero for this planar mesh.
+- `CELLS 2 10` gives two connectivity records containing ten integers in
+  total: each record starts with `4` and then lists four zero-based point
+  indices.
+- `CELL_TYPES 2` gives one type code per cell. Type **9** denotes a VTK quad.
 
-project(lab01 LANGUAGES CXX)
+The first cell is `(0,1,4,3)` and the second is `(1,2,5,4)`. Both refer to
+vertices **1 and 4**: they therefore share that edge. No explicit table of
+faces is required in this file.
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
+Open the file in **ParaView**, press **Apply**, and use **Surface With Edges**
+or **Wireframe** to identify the two cells.
 
-add_executable(lab01 lab-01.cc)
-```
+**Exercise A.** Change the coordinates of vertex 4 in the text file and
+reload it. Which cells are affected? Restore the original file.
 
-The important distinction is between the source directory and the build
-directory. We do not put generated object files next to the source file.
+**Exercise B.** Duplicate both vertices 1 and 4 with new indices but
+identical coordinates, and make only the second cell use the copies. The
+picture can remain unchanged, although the cells no longer share *point
+identities*. Explain why **geometry and connectivity are different**.
+This demonstrates a topological distinction; an application may still
+regard coincident but disconnected cells as an invalid computational mesh.
 
-## 4. A first C++ class template: `Point<dim, Number>`
+Reference: [VTK legacy file format](https://docs.vtk.org/en/latest/vtk_file_formats/vtk_legacy_file_format.html).
 
-Open `labs/lab-01/lab-01.cc`. The central example is the following class:
+## 3. From arrays to a mesh object (15 minutes)
+
+Open [`labs/lab-01/lab-01.cc`](https://github.com/luca-heltai/nmpde/blob/main/labs/lab-01/lab-01.cc).
+The code creates an equivalent mesh:
 
 ```cpp
-template <int dim, typename Number = double>
-class Point
-{
-public:
-  Number &operator[](std::size_t index)
-  {
-    return coordinates_.at(index);
-  }
+Triangulation<2> tria;
 
-  const Number &operator[](std::size_t index) const
-  {
-    return coordinates_.at(index);
-  }
-
-private:
-  std::array<Number, dim> coordinates_{};
-};
+GridGenerator::subdivided_hyper_rectangle(
+  tria,
+  std::vector<unsigned int>{2, 1},
+  Point<2>(0., 0.),
+  Point<2>(2., 1.));
 ```
 
-There are two template parameters:
+Identify the C++ concepts:
 
-- `dim` is a non-type template parameter. It fixes the number of coordinates
-  at compile time;
-- `Number` is a type template parameter. It specifies the coordinate type and
-  defaults to `double`.
+- `Triangulation<2>` is a **class template**, and `tria` is an **object**.
+- `GridGenerator` is a **namespace** providing mesh generation functions.
+- `Point<2>` represents a point in two dimensions.
+- The cells are quadrilaterals. In deal.II, the word *triangulation* refers
+  to a mesh; it does **not** imply that every cell is a triangle.
 
-The following declarations therefore describe different types:
+Object-oriented abstraction is not the absence of adjacency information.
+It is the ability to ask the mesh for geometrical/topological properties
+without knowing how the library stores and maintains them.
+
+## 4. Iterate over cells, vertices and faces (25 minutes)
+
+Here is a loop over the **active cells** of the triangulation:
 
 ```cpp
-Point<2>        point_2d;
-Point<3>        point_3d;
-Point<2, float> point_2d_single_precision;
+for (const auto &cell : tria.active_cell_iterators())
+  std::cout << cell->center() << '\n';
 ```
 
-This pattern is already close to the style used by deal.II, where the spatial
-dimension is frequently a template parameter. At this stage we only need a
-small class with indexed access; constructors, iterators, and operator
-overloading can be introduced later.
+We will study the distinction between active and parent cells later.
+For the initial unrefined mesh, all cells are active. The expression
+`cell->center()` is a method call through an iterator-like cell handle.
 
-The program also defines a templated function:
+Next, inspect cell vertices:
 
 ```cpp
-template <int dim, typename Number>
-Number scalar_field(const Point<dim, Number> &point)
-{
-  static_assert(dim == 2, "This first example is two-dimensional.");
-  constexpr Number pi = static_cast<Number>(3.14159265358979323846);
-  return std::sin(pi * point[0]) * std::sin(pi * point[1]);
-}
+for (const auto &cell : tria.active_cell_iterators())
+  for (unsigned int v = 0; v < cell->n_vertices(); ++v)
+    std::cout << "Vertex " << v << ": " << cell->vertex(v) << '\n';
 ```
 
-The function evaluates a scalar field on the unit square. The `static_assert`
-is checked by the compiler and documents the limitation of this first example.
+Notice that a *shared* vertex is printed once from each adjacent cell,
+although `tria.n_vertices()` counts distinct vertices.
 
-## 5. Configure, build, and run
+Finally, traverse cell faces:
 
-The complete course repository contains other laboratories that depend on
-deal.II. To build only this introductory program without deal.II, use a
-separate build directory and disable the later laboratories:
+```cpp
+for (const auto &cell : tria.active_cell_iterators())
+  for (unsigned int f = 0; f < cell->n_faces(); ++f)
+    {
+      const auto face = cell->face(f);
+      if (face->at_boundary())
+        std::cout << "Boundary id: " << face->boundary_id() << '\n';
+    }
+```
+
+An API call such as `face->at_boundary()` replaces the need to build a
+neighbour table in our application code. It expresses the mathematical
+question directly.
+
+**Exercise 1.** Write a function taking `const Triangulation<2> &`
+which returns the number of boundary faces. Predict the answer before
+executing the program.
+
+**Exercise 2.** Add up `cell->n_faces()` for every active cell. Why is this
+number **8** while the number of distinct faces is **7**?
+
+**Exercise 3.** Change the subdivisions from `{2,1}` to `{3,2}`.
+Predict the number of active cells, vertices and boundary faces and
+compare the result. Why does your boundary-counting function need no
+modification?
+
+**Initial reference values:** 2 active cells; 6 vertices; 6 boundary
+faces; 1 shared interior face.
+
+## 5. Build and export the mesh (15 minutes)
+
+Run the following from the repository root, inside the provided devcontainer
+(deal.II 9.7.1) or a compatible installation:
 
 ```bash
-cmake -S . -B build-lab01 -DNMPDE_BUILD_LABS=ON -DNMPDE_BUILD_DEALII_LABS=OFF -DNMPDE_BUILD_TESTS=OFF
-cmake --build build-lab01 --target lab-01
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
+cmake --build build --target lab-01 --parallel 2
+./build/bin/lab-01 rectangle
 ```
 
-Run the program from the repository root:
+The reference program saves `output/rectangle.vtk` through `GridOut`:
+
+```cpp
+GridOut grid_out;
+std::ofstream output("output/rectangle.vtk");
+grid_out.write_vtk(tria, output);
+```
+
+The actual implementation uses a helper to create the output directory
+and check for errors. In ParaView, compare the output with the handwritten
+`two-quads.vtk` file.
+
+The **geometrical mesh is equivalent**, but VTK point numbering, record
+ordering and metadata need not be identical. deal.II can export material
+and manifold identifiers alongside the cells. See
+[GridOut (deal.II 9.7)](https://dealii.org/9.7.0/doxygen/deal.II/classGridOut.html).
+
+```{figure} ../assets/generated/lab-01-two-quads.svg
+:alt: Two square cells sharing one edge
+:name: fig:lab-01-two-quads
+
+Two adjacent quadrilaterals generated by the course tests with `GridOut`.
+```
+
+## 6. Geometry, curved boundaries and manifolds (20 minutes)
+
+We have separated **coordinates** from **connectivity**. A further
+question arises when we refine a curved domain: *Where should the new
+vertices be placed?*
+
+Imagine an annulus. The midpoint of a straight chord between two points
+on a circle does not lie on that circle. If we always insert new vertices
+at straight-line midpoints, the refinement follows a polygonal
+approximation rather than the intended curved boundary.
+
+The `Manifold` interface provides geometrical information to deal.II's
+refinement machinery without putting circle-specific formulas into the
+application's traversal code.
+
+Try both modes of the example:
 
 ```bash
-./build-lab01/bin/lab-01 output/field.csv
+./build/bin/lab-01 shell-flat
+./build/bin/lab-01 shell-curved
 ```
 
-The program creates the `output/` directory if necessary and writes a CSV file
-with three columns:
+Both start with `GridGenerator::hyper_shell` and an identical coarse annular
+mesh. The generator **attaches a `SphericalManifold` by default**. In
+`shell-flat`, the call to `tria.reset_all_manifolds()` disables that curved
+description **before** `refine_global(2)`. In `shell-curved`, the attached
+spherical manifold remains available when new vertices are inserted.
 
-```text
-x,y,u
-0,0,0
-0.05,0,0
-...
+```{figure} ../assets/generated/lab-01-flat-shell.svg
+:alt: Refined annular grid with flat geometry
+:name: fig:lab-01-flat-shell
+
+With flat geometry, new boundary points lie on the polygonal chords.
 ```
 
-The first two columns contain the point coordinates. The third column contains
-the value of the scalar field. Since CSV is plain text, open the generated file
-in VS Code and inspect it before moving to ParaView.
+```{figure} ../assets/generated/lab-01-curved-shell.svg
+:alt: Refined annular grid with a spherical manifold
+:name: fig:lab-01-curved-shell
 
-### A useful diagnostic exercise
-
-Change `points_per_axis` in the source file, rebuild, and run the program
-again. Then deliberately introduce a small syntax error and observe how the
-compiler reports the file and line number in the VS Code Problems view. Undo
-the error and rebuild before continuing.
-
-## 6. Reading the CSV file in ParaView
-
-ParaView can open delimited text files. For an ordinary CSV file, the first
-object is a table: each row is a sample and each named column is an array. To
-give the rows spatial coordinates, use the `Table to Points` filter.
-
-1. Open `output/field.csv` with **File → Open**.
-2. Press **Apply** in the Properties panel.
-3. Select **Filters → Table to Points**.
-4. Set `x` as the X Column and `y` as the Y Column.
-5. Set the Z Column to `0` or leave the points in the XY plane.
-6. Press **Apply** again.
-7. Color the points using the `u` array.
-
-```{figure} ../assets/lab-01/paraview-gui.png
-:alt: ParaView graphical user interface with a pipeline and a render view
-:width: 70%
-:name: fig:lab-01-paraview-gui
-
-The basic ParaView pipeline and render view. Image from the official
-[ParaView beginning GUI tutorial](https://docs.paraview.org/en/latest/Tutorials/ClassroomTutorials/beginningGUI.html).
+With the spherical manifold, refinement respects the circular geometry.
 ```
 
-```{figure} ../assets/lab-01/paraview-information-tab.png
-:alt: ParaView Information tab showing data statistics
-:width: 55%
-:name: fig:lab-01-paraview-information
+Open `output/shell-flat.vtk` and `output/shell-curved.vtk` in ParaView,
+choose the wireframe representation, and zoom in on the two circular
+boundaries. Examine the positions of the newly created vertices.
 
-The Information tab is useful for checking the size and range of a data set.
-Image from the official
-[ParaView beginning GUI tutorial](https://docs.paraview.org/en/latest/Tutorials/ClassroomTutorials/beginningGUI.html).
-```
+Two IDs have different roles. A **`boundary_id`** identifies a part of
+the boundary for later use, for example when specifying boundary
+conditions. A **`manifold_id`** identifies the geometric description used
+for operations such as refinement. They are not interchangeable.
 
-The CSV format is intentionally simple, but it does not normally describe the
-connectivity of a mesh. The result of `Table to Points` is therefore a point
-cloud, not yet a finite element mesh or a continuous surface. This distinction
-will become important when later laboratories write `.vtu` files from deal.II.
-ParaView also provides `Table to Structured Grid` when a table contains enough
-information to reconstruct a structured grid.
+We will postpone mathematical details of manifolds, hierarchical mesh
+storage, and higher-order finite element mappings. The sole message
+today is that **topology and geometry are separate responsibilities**.
+For more see [deal.II step-1](https://dealii.org/9.7.0/doxygen/deal.II/step_1.html).
 
-The official ParaView documentation provides further information about
-[loading data](https://docs.paraview.org/en/latest/UsersGuide/dataIngestion.html)
-and [understanding tables and data sets](https://docs.paraview.org/en/latest/UsersGuide/understandingData.html).
+## 7. Discussion and final exercise (10 minutes)
 
-### From the CSV to contour lines
+Test your boundary-face-counting function on the two-quadrilateral mesh,
+a larger subdivided rectangle, and one of the annular meshes.
 
-The point cloud can be converted into a triangular surface and then into
-contour lines. Starting from the `field.csv` reader, build the following
-pipeline:
+Explain aloud: Which queries concern topology? Which concern geometry?
+How would you reconstruct the same information using only arrays? Why
+does your function work for different meshes without modification? And
+why is extra geometrical information needed when refining curved domains?
 
-```text
-CSV reader → Table to Points → Delaunay 2D → Contour
-```
+### Takeaway
 
-1. Select the `TableToPoints` object in the Pipeline Browser.
-2. Choose **Filters → Alphabetical → Delaunay 2D** and press **Apply**.
-   The filter connects the points with triangles, producing a surface on which
-   the scalar field can be interpolated.
-3. Select `Delaunay2D1`, choose **Filters → Common → Contour**, and press
-   **Apply**.
-4. In the Contour properties, set **Contour By** to `u`. Add one or more
-   contour values, for example `0.1`, `0.3`, `0.5`, and `0.7`.
-5. Keep the Delaunay surface visible and color it by `u`. Select `Contour1`,
-   choose a contrasting solid color such as white, and increase **Line Width**
-   if necessary.
-6. Toggle the visibility icons in the Pipeline Browser to compare the point
-   cloud, triangulated surface, and contour lines.
+A triangulation is a collection of geometric entities with incidence
+relations. A VTK file makes coordinates and cell connectivity visible.
+deal.II encapsulates the representation behind a stable, object-oriented
+interface. A manifold is a further abstraction that informs geometric
+operations without exposing their internal implementation.
 
-The `Contour` filter extracts the points, curves, or surfaces where a scalar
-field has a prescribed value. In this 2D case the output is a collection of
-curves, one curve for each selected level. The filters therefore make the
-geometry/data distinction explicit: `Table to Points` assigns coordinates,
-`Delaunay 2D` creates connectivity, and `Contour` extracts level sets. See
-the official [ParaView filter tutorial](https://docs.paraview.org/en/latest/Tutorials/SelfDirectedTutorial/basicUsage.html)
-for the general contour workflow.
-
-## 7. Previewing the course book locally
-
-The repository contains the MyST source for the course book. Build the HTML
-pages from the repository root:
-
-```bash
-make site
-```
-
-The generated pages are placed in `notes/_build/html/`. The `Makefile`
-provides a `serve` target that starts Python's standard HTTP server in that
-directory:
-
-```bash
-make serve
-```
-
-The `serve` target depends on `site`, so it rebuilds the book first and then
-starts the HTTP server.
-
-Open `http://127.0.0.1:8000/` in a browser. Keep the terminal running while
-you inspect the page; press `Ctrl+C` to stop the server. If you change a MyST
-file, rebuild the site with `make site` and refresh the browser.
-
-
-## 8. Exercises
-
-### Exercise 1 — Change the field
-
-Replace the scalar field with one of the following expressions and visualize
-the result:
-
-```text
-u(x,y) = x + y
-u(x,y) = x(1-x)y(1-y)
-u(x,y) = cos(2 pi x) sin(pi y)
-```
-
-Explain which changes are made in the C++ source and which changes are visible
-only in the CSV output.
-
-### Exercise 2 — Change the scalar type
-
-Instantiate the point as `Point<2, float>` and adapt the call to
-`scalar_field`. Compare the generated values with the `double` version. Which
-parts of the code depend on the `Number` template parameter?
-
-### Exercise 3 — Add a third coordinate
-
-Create a `Point<3>` and initialize its three coordinates. Add a member function
-that computes the squared Euclidean norm. Do not change the two-dimensional CSV
-experiment yet; the goal is to practice the compile-time dimension parameter.
-
-### Exercise 4 — Use Git as a local safety net
-
-If you are working in a personal copy, make a local commit after each milestone:
-
-```bash
-git status
-git diff
-git add labs/lab-01/lab-01.cc
-git commit -m "Generate a scalar field in CSV format"
-```
-
-These commits are local checkpoints. They are not pushed to the lecturer's
-repository.
-
-### Exercise 5 — Extend the program to three dimensions
-
-Extend `lab-01.cc` so that it generates a three-dimensional data set.
-
-1. Change the dimension to `dim = 3`.
-2. Replace the two-dimensional restriction in `scalar_field` with a dimension-
-   independent implementation, for example:
-
-   ```cpp
-   Number value = 1;
-   for (int d = 0; d < dim; ++d)
-     value *= std::sin(pi * point[d]);
-   return value;
-   ```
-
-3. Add a loop over the third coordinate and assign `point[2]`.
-4. Change the CSV header to `x,y,z,u` and write four values per row.
-5. Use a smaller grid such as `11` points per axis for the first experiment:
-   a three-dimensional grid contains `11^3 = 1331` points.
-
-Write the result to a different file so that the original 2D experiment is
-preserved:
-
-```bash
-./build-lab01/bin/lab-01 output/field-3d.csv
-```
-
-Open the new file in ParaView and use `Table to Points` with `x`, `y`, and `z`
-as the three coordinate columns. The 3D analogue of the previous pipeline is:
-
-```text
-CSV reader → Table to Points → Delaunay 3D → Contour
-```
-
-Select `Delaunay 3D` instead of `Delaunay 2D`. Then apply `Contour`, choose
-`u`, and experiment with several isovalues between zero and one. In three
-dimensions the contour output is an isosurface rather than a curve.
-
-### Exercise 6 — Explore 3D opacity
-
-Use the Display properties of the Delaunay surface and of the Contour output
-to compare opacity values such as `1.0`, `0.5`, and `0.2`. Try the following
-experiments:
-
-- keep the triangulated volume almost transparent and the isosurfaces opaque;
-- keep the volume opaque and make the isosurfaces semi-transparent;
-- create several contour levels and use different colors or a different
-  opacity for each level;
-- enable the opacity transfer function in the Color Map Editor, if available,
-  and inspect how the visual result changes with the scalar value.
-
-Record which objects are visible at each stage and explain why changing the
-opacity of the surface can reveal internal isosurfaces. ParaView's contour
-filter is described as extracting an isosurface for a selected scalar value in
-the [official basic-usage tutorial](https://docs.paraview.org/en/latest/Tutorials/SelfDirectedTutorial/basicUsage.html).
-
-## Completion checklist
-
-Before leaving the laboratory, check that:
-
-- `git pull --ff-only` completed successfully;
-- the program builds from a clean `build-lab01` directory;
-- `output/field.csv` contains the header `x,y,u`;
-- ParaView displays the samples after `Table to Points`;
-- the source contains both a `Point<dim, Number>` class template and a
-  templated scalar-field function;
-- `make site` creates `notes/_build/html/`;
-- `make serve` serves the local book.
-
-The next laboratory will introduce a more structured C++ project and debugging
-before the first program that depends on deal.II.
-
-## A reference 2D contour plot
-
-The following image was produced from the original `field.csv` with the
-pipeline described above: `Table to Points`, `Delaunay 2D`, and `Contour`.
-
-```{figure} ../assets/lab-01/contours-lab01.png
-:alt: A scalar field with white contour lines generated in ParaView
-:width: 80%
-:name: fig:lab-01-contours
-
-Reference contour plot for the 2D CSV data set. The filled colors show the
-scalar field, while the white curves are the selected contour levels.
-```
+**Next laboratory:** finite element spaces and degrees of freedom.
