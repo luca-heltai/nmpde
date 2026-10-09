@@ -87,8 +87,8 @@ struct PoissonParameters
   unsigned int fe_degree                 = 1;
   unsigned int initial_refinement        = 3;
   unsigned int n_cycles                  = 1;
-  std::string  exact_solution_expression = "cos(pi*x)*cos(pi*y)";
-  std::string  rhs_expression            = "2*pi*pi*cos(pi*x)*cos(pi*y)";
+  std::string  exact_solution_expression = (dim == 2 ? "cos(pi*x)*cos(pi*y)"          : "cos(pi*x)*cos(pi*y)*cos(pi*z)"         );
+  std::string  rhs_expression            = (dim == 2 ? "2*pi*pi*cos(pi*x)*cos(pi*y)"  : "3*pi*pi*cos(pi*x)*cos(pi*y)*cos(pi*z)" );
 
   FunctionParser<dim> exact_solution;
   FunctionParser<dim> rhs_function;
@@ -336,7 +336,7 @@ main()
 1. **Mesh Creation:**
    - Modify the `make_grid` function to create different types of meshes using `GridGenerator`, such as `hyper_ball` and `subdivided_hyper_rectangle`.
    - Print the number of active cells and total cells for each mesh.
-   - Use `GridGenerator::generate_from_name_and_arguments`, and add two paramaters to the parameter file to generate the grid from the function name (i.e., `hyper_cube`, or `hyper_shell`) and the function arguments
+   - Use `GridGenerator::generate_from_name_and_arguments`, and add two parameters to the parameter file to generate the grid from the function name (i.e., `hyper_cube`, or `hyper_shell`) and the function arguments
 
 ### Exercise 3: Assembling and Solving the System
 
