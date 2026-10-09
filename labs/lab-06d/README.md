@@ -1,4 +1,4 @@
-# Lab 5d: Nitsche boundary conditions
+# Lab 6d: Nitsche boundary conditions
 
 This lab implements the Nitsche boundary conditions for a PDE problem. The
 Nitsche method is a technique used in finite element methods to impose boundary

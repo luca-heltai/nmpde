@@ -1,7 +1,7 @@
 ---
-title: Laboratory 8 — Discontinuous Galerkin methods
+title: Laboratory 8 — A posteriori error estimation
 ---
 
 ```{include} ../../labs/lab-08/README.md
-:start-after: "# Lab: From CG Poisson to DG Poisson (SIPG)"
+:start-after: # Lab: Error Estimation using MeshWorker::mesh_loop
 ```

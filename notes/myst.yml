@@ -20,6 +20,7 @@ project:
     - file: laboratories/index.md
       children:
         - file: laboratories/lab-01.md
+        - file: laboratories/lab-02.md
     - file: projects.md
 
 site:

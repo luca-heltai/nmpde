@@ -1,7 +1,7 @@
 ---
-title: Laboratory 4 — The Poisson equation
+title: Laboratory 4 — Interpolation and error computation
 ---
 
 ```{include} ../../labs/lab-04/README.md
-:start-after: "# Lab: Solving the Poisson Equation in deal.II"
+:start-after: # Lab: Interpolating Functions and Computing Errors in deal.II
 ```

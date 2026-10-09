@@ -1,10 +1,10 @@
-# Lab 5b: Improving the Poisson Solver (Neumann boundary conditions)
+# Lab 6e: Improving the Poisson Solver (Neumann boundary conditions)
 
 This laboratory is designed to teach you how to assemble Neumann boundary terms.
 
-## Overview of `lab-05b.cc`
+## Overview of `lab-06e.cc`
 
-The file `lab-05b.cc` implements a finite element solver for the Poisson equation using the deal.II library. The code is designed to handle both Dirichlet and Neumann boundary conditions in a flexible way.
+The file `lab-06e.cc` implements a finite element solver for the Poisson equation using the deal.II library. The code is designed to handle both Dirichlet and Neumann boundary conditions in a flexible way.
 
 ### Neumann Boundary IDs
 

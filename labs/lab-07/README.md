@@ -1,73 +1,215 @@
-# Lab: Error Estimation using MeshWorker::mesh_loop
+# Lab: Vector-Valued Finite Element Spaces in Linear Elasticity
 
 ## Overview
 
-In this lab, you will extend the work from Lab 5 to implement the theoretical error estimator and use it for adaptive mesh refinement. You will use `MeshWorker::mesh_loop` to efficiently assemble the error estimator and handle face integrals, especially when dealing with hanging nodes. This exercise will help you understand how to integrate face terms and apply adaptive refinement based on error estimates.
+In this lab, you will work with vector-valued finite element spaces to solve linear elasticity problems using the deal.II library. You will learn about using `FESystem` for creating vector-valued finite elements and `FEValuesExtractors` for accessing individual components of the vector fields. Additionally, you will implement non-homogeneous Neumann boundary conditions and perform three different types of experiments: Dirichlet pulling experiment, Neumann pulling experiment, and cantilever experiment.
 
-## Exercise: Implementing Advanced Error Estimator
+## Salient Changes for Vector-Valued Elements
 
-The goal of this exercise is to use `MeshWorker::mesh_loop` to assemble the error estimator defined in class:
+### FESystem
 
-$$
-\eta_T = h_T \| f + \Delta u_h \|_{L^2(T)} + \sum_{F \in \partial T} \frac12 h_F^{1/2} \| [\nabla u_h] \|_{L^2(F)}
-$$
+`FESystem` is used to create a vector-valued finite element space by combining scalar finite elements. In this lab, `FESystem<dim>` is created using `FE_Q<dim>` elements:
 
-### Starting Point
+```cpp
+FESystem<dim> fe(FE_Q<dim>(par.fe_degree), dim);
+```
 
-Start from the provided `experiments.cc` file, which demonstrates the use of `MeshWorker::mesh_loop` to compute face integrals. Your task is to integrate this approach into the error estimation for the Poisson problem.
+### FEValuesExtractors
 
-### Key Concepts
+`FEValuesExtractors` are used to access specific components of the vector field in `FEValues` and `FEFaceValues` objects. For example, to extract displacement components:
 
-1. **MeshWorker::mesh_loop**:
-   - This function simplifies the loop over cells and faces, allowing you to define custom cell and face integrals efficiently.
+```cpp
+FEValuesExtractors::Vector displacements(0);
+```
 
-2. **Error Estimator**:
-   - Implement an error estimator that combines volume and face terms, especially useful for adaptive refinement.
+This extractor can then be used to access the values, gradients, and other quantities of the displacement field.
 
-3. **Handling Hanging Nodes**:
-   - Properly integrate face terms in the presence of hanging nodes using `MeshWorker::mesh_loop`.
+### Assembly and Boundary Conditions
 
-### Steps
+In vector-valued problems, the assembly of the system matrix and right-hand side vector involves operations on vector fields. The implementation of boundary conditions (both Dirichlet and Neumann) also needs to be adapted for vector-valued elements.
 
-1. **Define the Error Estimator**:
-   - Implement the error estimator using `MeshWorker::mesh_loop` based on the definition provided in class.
+#### Dirichlet Boundary Conditions
 
-2. **Integrate Face Terms**:
-   - Use `MeshWorker::mesh_loop` to compute face terms, ensuring correct handling of hanging nodes.
+Dirichlet boundary conditions are imposed using `AffineConstraints<double>`:
 
-3. **Adaptive Refinement**:
-   - Use the error estimates to mark and refine the mesh adaptively.
+```cpp
+for (const auto &id : par.dirichlet_ids)
+  VectorTools::interpolate_boundary_values(dof_handler,
+                                           id,
+                                           par.exact_solution,
+                                           constraints);
+```
 
-### Explanation: Using `MeshWorker::mesh_loop` for Error Estimation
+#### Neumann Boundary Conditions
 
-`MeshWorker::mesh_loop` is used to handle the assembly of both cell and face integrals efficiently, especially when dealing with hanging nodes. Here are the key steps involved:
+Neumann boundary conditions are implemented by integrating the Neumann data over the boundary faces:
 
-1. **Define Scratch and Copy Data**:
-   - `MeshWorker::ScratchData` is used to store intermediate data during the loop over cells and faces.
-   - `MeshWorker::CopyData` is used to store the local contributions that will be copied to the global system.
+```cpp
+for (const auto &f : cell->face_indices())
+  if (cell->face(f)->at_boundary() &&
+      par.neumann_ids.find(cell->face(f)->boundary_id()) != par.neumann_ids.end())
+    {
+      fe_face_values.reinit(cell, f);
+      for (const unsigned int q_index : fe_face_values.quadrature_point_indices())
+        for (const unsigned int i : fe_values.dof_indices())
+          {
+            const auto &phi_i = fe_face_values[displacements].value(i, q_index);
+            const auto &x_q = fe_face_values.quadrature_point(q_index);
+            const auto comp_i = fe.system_to_component_index(i).first;
 
-2. **Cell Worker Function**:
-   - This function assembles the cell integrals by looping over the quadrature points and shape functions.
+            cell_rhs(i) += phi_i[comp_i] * par.neumann_function.value(x_q, comp_i) *
+                           fe_face_values.JxW(q_index);
+          }
+    }
+```
 
-3. **Face Worker Function**:
-   - This function assembles the face integrals, which are important for computing the jump terms in the error estimator.
+## Exercises
 
-4. **Copier Function**:
-   - This function copies the local contributions to the global system, applying constraints as needed.
+### Exercise 1: Implement Non-Homogeneous Neumann Boundary Conditions
 
-5. **Run the Mesh Loop**:
-   - `MeshWorker::mesh_loop` is called with the defined worker and copier functions to perform the assembly.
+1. **Modify the `assemble_system` Method:**
+   - Ensure that non-homogeneous Neumann boundary conditions are correctly implemented as shown in the provided code.
 
-By following these steps and using `MeshWorker::mesh_loop`, you can efficiently assemble the error estimator and handle complex mesh configurations with hanging nodes. This approach simplifies the implementation and ensures accurate computation of both cell and face terms in the error estimator.
+### Exercise 2: Perform Dirichlet Pulling Experiment
 
-### Additional Exercise: Advanced Error Estimation with `MeshWorker::mesh_loop`
+1. **Setup:**
+   - Fix one side of the domain (e.g., `x=0`) with Dirichlet boundary conditions.
+   - Apply a uniform displacement on the opposite side (e.g., `x=1`).
 
-1. **Implement the Error Estimator**:
-   - Extend the `estimate` method to fully implement the advanced error estimator using `MeshWorker::mesh_loop`.
+2. **Run and Analyze:**
+   - Run the simulation and visualize the displacement field.
+   - Analyze the results and check if the deformation is as expected.
 
-2. **Integrate with Adaptive Refinement**:
-   - Use the computed error estimates to mark cells for refinement and perform adaptive mesh refinement.
+3. **Physical considerations**
+   - What happens if you set `lambda` to 0 in this case?
+   - What happens if you set `lambda` to `1e5` in this case?
 
-3. **Analyze Results**:
-   - Compare the results of adaptive refinement with uniform refinement, and analyze the efficiency and accuracy of the solution.
-   - Compare your error estimator with the Kelly error estimator. Do you see any noticeable differences?
+### Exercise 3: Perform Neumann Pulling Experiment
+
+1. **Setup:**
+   - Fix one side of the domain (e.g., `x=0`) with Dirichlet boundary conditions.
+   - Apply a uniform traction (Neumann boundary condition) on the opposite side (e.g., `x=1`).
+
+2. **Run and Analyze:**
+   - Run the simulation and visualize the displacement field.
+   - Analyze the results and check if the deformation is as expected.
+
+### Exercise 4: Perform Cantilever Experiment
+
+1. **Setup:**
+   - Fix one side of the domain (e.g., `x=0`) with Dirichlet boundary conditions.
+   - Apply a point load or distributed load (Neumann boundary condition) at the free end (e.g., `x=1`).
+
+2. **Run and Analyze:**
+   - Run the simulation and visualize the displacement field.
+   - Analyze the results and check if the deformation is as expected.
+
+## Code Snippets
+
+### Assembly with Non-Homogeneous Neumann Boundary Conditions
+
+```cpp
+template <int dim>
+void LinearElasticity<dim>::assemble_system()
+{
+  QGauss<dim>     quadrature_formula(fe.degree + 1);
+  QGauss<dim - 1> face_quadrature_formula(fe.degree + 1);
+
+  FEValues<dim> fe_values(fe,
+                          quadrature_formula,
+                          update_values | update_gradients |
+                            update_quadrature_points | update_JxW_values);
+
+  FEFaceValues<dim> fe_face_values(fe,
+                                   face_quadrature_formula,
+                                   update_values | update_quadrature_points |
+                                     update_JxW_values);
+
+  const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
+
+  FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
+  Vector<double>     cell_rhs(dofs_per_cell);
+
+  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+
+  FEValuesExtractors::Vector displacements(0);
+
+  for (const auto &cell : dof_handler.active_cell_iterators())
+    {
+      fe_values.reinit(cell);
+      cell_matrix = 0;
+      cell_rhs    = 0;
+
+      for (const unsigned int q_index : fe_values.quadrature_point_indices())
+        for (const unsigned int i : fe_values.dof_indices())
+          {
+            const auto &phi_i = fe_values[displacements].value(i, q_index);
+            const auto &div_phi_i =
+              fe_values[displacements].divergence(i, q_index);
+            const auto &eps_phi_i =
+              fe_values[displacements].symmetric_gradient(i, q_index);
+
+            for (const unsigned int j : fe_values.dof_indices())
+              {
+                const auto &div_phi_j =
+                  fe_values[displacements].divergence(j, q_index);
+                const auto &eps_phi_j =
+                  fe_values[displacements].symmetric_gradient(j, q_index);
+
+                cell_matrix(i, j) +=
+                  (par.mu * scalar_product(eps_phi_i, eps_phi_j) +
+                   par.lambda * div_phi_i * div_phi_j) *
+                  fe_values.JxW(q_index); // dx
+              }
+
+            const auto &x_q    = fe_values.quadrature_point(q_index);
+            const auto  comp_i = fe.system_to_component_index(i).first;
+
+            cell_rhs(i) += (phi_i[comp_i] *                       // phi_i(x_q)
+                            par.rhs_function.value(x_q, comp_i) * // f(x_q)
+                            fe_values.JxW(q_index));              // dx
+          }
+
+      for (const auto &f : cell->face_indices())
+        if (cell->face(f)->at_boundary() &&
+            par.neumann_ids.find(cell->face(f)->boundary_id()) !=
+              par.neumann_ids.end())
+          {
+            fe_face_values.reinit(cell, f);
+            for (const unsigned int q_index :
+                 fe_face_values.quadrature_point_indices())
+              for (const unsigned int i : fe_values.dof_indices())
+                {
+                  const auto &phi_i =
+                    fe_face_values[displacements].value(i, q_index);
+                  const auto &x_q    = fe_face_values.quadrature_point(q_index);
+                  const auto  comp_i = fe.system_to_component_index(i).first;
+
+                  cell_rhs(i) +=
+                    (phi_i[comp_i] * par.neumann_function.value(x_q, comp_i) *
+                     fe_face_values.JxW(q_index));
+                }
+          }
+
+
+      cell->get_dof_indices(local_dof_indices);
+      constraints.distribute_local_to_global(
+        cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
+    }
+}
+```
+
+### Running the Simulation
+
+```cpp
+int main()
+{
+  {
+    LinearElasticityParameters<2> par;
+    LinearElasticity<2>           laplace_problem_2d(par);
+    laplace_problem_2d.run();
+  }
+
+  return 0;
+}
+```

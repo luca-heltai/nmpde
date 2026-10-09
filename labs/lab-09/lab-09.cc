@@ -9,10 +9,7 @@
 #include <deal.II/dofs/dof_handler.h>
 #include <deal.II/dofs/dof_tools.h>
 
-#include <deal.II/fe/fe_dgp.h>
-#include <deal.II/fe/fe_dgq.h>
 #include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_system.h>
 #include <deal.II/fe/fe_values.h>
 
 #include <deal.II/grid/grid_generator.h>
@@ -24,9 +21,12 @@
 #include <deal.II/lac/full_matrix.h>
 #include <deal.II/lac/precondition.h>
 #include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/sparse_direct.h>
 #include <deal.II/lac/sparse_matrix.h>
 #include <deal.II/lac/vector.h>
+
+#include <deal.II/meshworker/copy_data.h>
+#include <deal.II/meshworker/mesh_loop.h>
+#include <deal.II/meshworker/scratch_data.h>
 
 #include <deal.II/numerics/data_out.h>
 #include <deal.II/numerics/error_estimator.h>
@@ -39,29 +39,21 @@
 using namespace dealii;
 
 template <int dim>
-struct StokesParameters
+struct PoissonParameters
 {
-  StokesParameters()
-    : exact_solution(dim + 1)
-    , rhs_function(dim + 1)
-    , neumann_function(dim + 1)
-    , convergence_table({"u", "u", "p"},
-                        {{VectorTools::H1_norm, VectorTools::L2_norm},
-                         {VectorTools::L2_norm}})
+  PoissonParameters()
   {
-    prm.enter_subsection("Stokes parameters");
+    prm.enter_subsection("Poisson parameters");
     {
       prm.add_parameter("Finite element degree", fe_degree);
       prm.add_parameter("Initial refinement", initial_refinement);
       prm.add_parameter("Number of cycles", n_cycles);
       prm.add_parameter("Exact solution expression", exact_solution_expression);
-      prm.add_parameter("Neumann data expression", neumann_function_expression);
       prm.add_parameter("Right hand side expression", rhs_expression);
-      prm.add_parameter("Viscosity", eta);
-      prm.add_parameter("Local refinement top fraction", top_fraction);
-      prm.add_parameter("Local refinement bottom fraction", bottom_fraction);
-      prm.add_parameter("Dirichlet boundary ids", dirichlet_ids);
-      prm.add_parameter("Neumann boundary ids", neumann_ids);
+      prm.add_parameter("Refinement top fraction", refinement_top_fraction);
+      prm.add_parameter("Refinement bottom fraction",
+                        refinement_bottom_fraction);
+      prm.add_parameter("Gamma", gamma);
     }
     prm.leave_subsection();
 
@@ -71,12 +63,12 @@ struct StokesParameters
 
     try
       {
-        prm.parse_input("stokes_" + std::to_string(dim) + "d.prm");
+        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
       }
     catch (std::exception &exc)
       {
-        prm.print_parameters("stokes_" + std::to_string(dim) + "d.prm");
-        prm.parse_input("stokes_" + std::to_string(dim) + "d.prm");
+        prm.print_parameters("poisson_" + std::to_string(dim) + "d.prm");
+        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
       }
     std::map<std::string, double> constants;
     constants["pi"] = numbers::PI;
@@ -86,28 +78,19 @@ struct StokesParameters
     rhs_function.initialize(FunctionParser<dim>::default_variable_names(),
                             {rhs_expression},
                             constants);
-
-    neumann_function.initialize(FunctionParser<dim>::default_variable_names(),
-                                {neumann_function_expression},
-                                constants);
   }
-  unsigned int fe_degree                   = 1;
-  unsigned int initial_refinement          = 3;
-  unsigned int n_cycles                    = 1;
-  std::string  exact_solution_expression   = "0; 0; 0";
-  std::string  rhs_expression              = "0; 0; 0";
-  std::string  neumann_function_expression = "0; 0; 0";
-  double       eta                         = 1.0;
+  unsigned int fe_degree                 = 1;
+  unsigned int initial_refinement        = 3;
+  unsigned int n_cycles                  = 1;
+  std::string  exact_solution_expression = "cos(pi*x)*cos(pi*y)";
+  std::string  rhs_expression            = "2*pi*pi*cos(pi*x)*cos(pi*y)";
 
-  std::set<types::boundary_id> dirichlet_ids = {0};
-  std::set<types::boundary_id> neumann_ids   = {1};
-
-  double top_fraction    = .3;
-  double bottom_fraction = 0;
+  double refinement_top_fraction    = .3;
+  double refinement_bottom_fraction = 0.0;
+  double gamma                      = 1.0;
 
   FunctionParser<dim> exact_solution;
   FunctionParser<dim> rhs_function;
-  FunctionParser<dim> neumann_function;
 
   mutable ParsedConvergenceTable convergence_table;
 
@@ -117,16 +100,22 @@ struct StokesParameters
 
 
 template <int dim>
-class Stokes
+class Poisson
 {
 public:
-  Stokes(const StokesParameters<dim> &parameters);
+  Poisson(const PoissonParameters<dim> &parameters);
   void
   run();
 
 private:
   void
   make_grid();
+  void
+  estimate();
+  void
+  mark();
+  void
+  refine();
   void
   setup_system();
   void
@@ -136,10 +125,10 @@ private:
   void
   output_results(const unsigned int cycle) const;
 
-  const StokesParameters<dim> &par;
+  const PoissonParameters<dim> &par;
 
   Triangulation<dim> triangulation;
-  FESystem<dim>      fe;
+  FE_Q<dim>          fe;
   DoFHandler<dim>    dof_handler;
 
   AffineConstraints<double> constraints;
@@ -149,14 +138,16 @@ private:
 
   Vector<double> solution;
   Vector<double> system_rhs;
+  Vector<float>  estimated_error_per_cell;
+  Vector<float>  kelly_estimated_error_per_cell;
 };
 
 
 
 template <int dim>
-Stokes<dim>::Stokes(const StokesParameters<dim> &par)
+Poisson<dim>::Poisson(const PoissonParameters<dim> &par)
   : par(par)
-  , fe(FE_Q<dim>(par.fe_degree), dim, FE_DGP<dim>(par.fe_degree - 1), 1)
+  , fe(par.fe_degree)
   , dof_handler(triangulation)
 {}
 
@@ -164,9 +155,9 @@ Stokes<dim>::Stokes(const StokesParameters<dim> &par)
 
 template <int dim>
 void
-Stokes<dim>::make_grid()
+Poisson<dim>::make_grid()
 {
-  GridGenerator::hyper_cube(triangulation, 0, 1, true);
+  GridGenerator::hyper_cube(triangulation, -1, 1);
   triangulation.refine_global(par.initial_refinement);
 
   std::cout << "   Number of active cells: " << triangulation.n_active_cells()
@@ -176,9 +167,144 @@ Stokes<dim>::make_grid()
 }
 
 
+
 template <int dim>
 void
-Stokes<dim>::setup_system()
+Poisson<dim>::estimate()
+{
+  // Substitute this call with your own implementation of the error estimator
+  KellyErrorEstimator<dim>::estimate(dof_handler,
+                                     QGauss<dim - 1>(fe.degree + 1),
+                                     {},
+                                     solution,
+                                     kelly_estimated_error_per_cell);
+
+
+  // Run the mesh loop using the defined cell worker, face worker, and copier
+  // functions
+
+  MeshWorker::ScratchData<dim> scratch_data(
+    fe,
+    QGauss<dim>(fe.degree + 1),
+    update_hessians | update_quadrature_points | update_JxW_values,
+    QGauss<dim - 1>(fe.degree + 1),
+    update_gradients | update_normal_vectors | update_JxW_values);
+
+  struct CopyData
+  {
+    std::vector<double>       errors;
+    std::vector<unsigned int> cell_indices;
+  };
+
+  CopyData copy_data;
+
+  const auto copier = [&](const auto &copy) {
+    for (unsigned int i = 0; i < copy.cell_indices.size(); ++i)
+      estimated_error_per_cell[copy.cell_indices[i]] += copy.errors[i];
+  };
+
+  const auto cell_worker = [&](const auto &cell, auto &scratch, auto &copy) {
+    const auto &fe_v = scratch.reinit(cell);
+    const auto &dofs = scratch.get_local_dof_indices();
+    const auto  H    = cell->diameter();
+
+    double integral = 0;
+    for (const auto q : fe_v.quadrature_point_indices())
+      {
+        double laplacian = 0;
+        for (unsigned int i = 0; i < fe_v.dofs_per_cell; ++i)
+          {
+            laplacian += trace(fe_v.shape_hessian(i, q)) * solution[dofs[i]];
+          }
+        const auto res =
+          laplacian + par.rhs_function.value(fe_v.quadrature_point(q));
+        integral += (res * res) * H * H * fe_v.JxW(q);
+      }
+
+    copy.errors.push_back(integral);
+    copy.cell_indices.push_back(cell->active_cell_index());
+  };
+
+  const auto face_worker = [&](const auto        &cell,
+                               const unsigned int face_no,
+                               const unsigned int sub_face_no,
+                               const auto        &n_cell,
+                               const unsigned int n_face_no,
+                               const unsigned int n_sub_face_no,
+                               auto              &scratch,
+                               auto              &copy) {
+    auto &fe_v = scratch.reinit(
+      cell, face_no, sub_face_no, n_cell, n_face_no, n_sub_face_no);
+
+    // Compute the integral of the gradients dot normal vectors
+    double integral = 0;
+    for (const auto q : fe_v.quadrature_point_indices())
+      {
+        // compute the jump in gradient using a loop over finite element indices
+        Tensor<1, dim> gradient_jump;
+        const auto    &dofs = scratch.get_local_dof_indices();
+        for (unsigned int i = 0; i < fe_v.n_current_interface_dofs(); ++i)
+          {
+            gradient_jump += fe_v[FEValuesExtractors::Scalar(0)].jump_in_gradients(i, q) * solution[dofs[i]];
+          }
+        const auto jump = gradient_jump * fe_v.normal_vector(q);
+        integral += 1. / 24.0 * (jump * jump) * cell->diameter() * fe_v.JxW(q);
+      }
+
+    copy.errors.push_back(integral);
+    copy.cell_indices.push_back(cell->active_cell_index());
+  };
+
+
+  MeshWorker::mesh_loop(dof_handler.begin_active(),
+                        dof_handler.end(),
+                        cell_worker,
+                        copier,
+                        scratch_data,
+                        copy_data,
+                        MeshWorker::assemble_own_cells |
+                          MeshWorker::assemble_own_interior_faces_both,
+                        {},
+                        face_worker);
+
+  for (auto &entry : estimated_error_per_cell)
+    entry = std::sqrt(entry);
+
+  auto tmp = estimated_error_per_cell;
+  tmp -= kelly_estimated_error_per_cell;
+
+  std::cout << "Kelly: " << kelly_estimated_error_per_cell.l2_norm()
+            << std::endl;
+  std::cout << "Error: " << estimated_error_per_cell.l2_norm() << std::endl;
+
+  std::cout << "Error on error: " << tmp.l2_norm() << std::endl;
+}
+
+
+template <int dim>
+void
+Poisson<dim>::mark()
+{
+  GridRefinement::refine_and_coarsen_fixed_fraction(
+    triangulation,
+    estimated_error_per_cell,
+    par.refinement_top_fraction,
+    par.refinement_bottom_fraction);
+}
+
+
+template <int dim>
+void
+Poisson<dim>::refine()
+{
+  triangulation.execute_coarsening_and_refinement();
+}
+
+
+
+template <int dim>
+void
+Poisson<dim>::setup_system()
 {
   dof_handler.distribute_dofs(fe);
 
@@ -186,11 +312,10 @@ Stokes<dim>::setup_system()
             << std::endl;
 
   constraints.clear();
-  for (const auto &id : par.dirichlet_ids)
-    VectorTools::interpolate_boundary_values(dof_handler,
-                                             id,
-                                             par.exact_solution,
-                                             constraints);
+  // VectorTools::interpolate_boundary_values(dof_handler,
+  //                                          0,
+  //                                          par.exact_solution,
+  //                                          constraints);
 
   // Create hanging node constraints
   DoFTools::make_hanging_node_constraints(dof_handler, constraints);
@@ -204,116 +329,150 @@ Stokes<dim>::setup_system()
 
   solution.reinit(dof_handler.n_dofs());
   system_rhs.reinit(dof_handler.n_dofs());
+  estimated_error_per_cell.reinit(triangulation.n_active_cells());
+  kelly_estimated_error_per_cell.reinit(triangulation.n_active_cells());
 }
 
 
 
 template <int dim>
 void
-Stokes<dim>::assemble_system()
+Poisson<dim>::assemble_system()
 {
-  QGauss<dim>     quadrature_formula(fe.degree + 1);
-  QGauss<dim - 1> face_quadrature_formula(fe.degree + 1);
+  MeshWorker::ScratchData<dim> scratch_data(fe,
+                                            QGauss<dim>(fe.degree + 1),
+                                            update_values | update_gradients |
+                                              update_quadrature_points |
+                                              update_JxW_values,
+                                            QGauss<dim - 1>(fe.degree + 1),
+                                            update_values | update_gradients |
+                                              update_quadrature_points |
+                                              update_normal_vectors |
+                                              update_JxW_values);
 
-  FEValues<dim> fe_values(fe,
-                          quadrature_formula,
-                          update_values | update_gradients |
-                            update_quadrature_points | update_JxW_values);
+  MeshWorker::CopyData<> copy_data(fe.dofs_per_cell);
 
-  FEFaceValues<dim> fe_face_values(fe,
-                                   face_quadrature_formula,
-                                   update_values | update_quadrature_points |
-                                     update_JxW_values);
+  auto cell_worker = [&](const auto &cell, auto &scratch, auto &copy) {
+    const auto &fe_values         = scratch.reinit(cell);
+    auto       &cell_matrix       = copy.matrices[0];
+    auto       &cell_rhs          = copy.vectors[0];
+    auto       &local_dof_indices = copy.local_dof_indices[0];
 
-  const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
+    cell_matrix = 0;
+    cell_rhs    = 0;
 
-  FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
-  Vector<double>     cell_rhs(dofs_per_cell);
+    for (const unsigned int q_index : fe_values.quadrature_point_indices())
+      for (const unsigned int i : fe_values.dof_indices())
+        {
+          for (const unsigned int j : fe_values.dof_indices())
+            cell_matrix(i, j) +=
+              (fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
+               fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
+               fe_values.JxW(q_index));           // dx
 
-  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
+          const auto &x_q = fe_values.quadrature_point(q_index);
+          cell_rhs(i) += (fe_values.shape_value(i, q_index) * // phi_i(x_q)
+                          par.rhs_function.value(x_q) *       // f(x_q)
+                          fe_values.JxW(q_index));            // dx
+        }
 
-  FEValuesExtractors::Vector velocity(0);
-  FEValuesExtractors::Scalar pressure(dim);
+    cell->get_dof_indices(local_dof_indices);
+  };
 
-  for (const auto &cell : dof_handler.active_cell_iterators())
-    {
-      fe_values.reinit(cell);
-      cell_matrix = 0;
-      cell_rhs    = 0;
+  auto boundary_worker =
+    [&](const auto &cell, auto f, auto &scratch, auto &copy) {
+      const auto &fe_values   = scratch.reinit(cell, f);
+      auto       &cell_matrix = copy.matrices[0];
+      auto       &cell_rhs    = copy.vectors[0];
 
       for (const unsigned int q_index : fe_values.quadrature_point_indices())
-        for (const unsigned int i : fe_values.dof_indices())
-          {
-            const auto &v_i        = fe_values[velocity].value(i, q_index);
-            const auto &div_v_i    = fe_values[velocity].divergence(i, q_index);
-            const auto &grad_phi_i = fe_values[velocity].gradient(i, q_index);
-            const auto &q_i        = fe_values[pressure].value(i, q_index);
+        {
+          const auto  n   = fe_values.normal_vector(q_index);
+          const auto &x_q = fe_values.quadrature_point(q_index);
 
-            for (const unsigned int j : fe_values.dof_indices())
-              {
-                // const auto &v_j = fe_values[velocity].value(j, q_index);
-                const auto &div_v_j =
-                  fe_values[velocity].divergence(j, q_index);
-                const auto &grad_phi_j =
-                  fe_values[velocity].gradient(j, q_index);
-                const auto &q_j = fe_values[pressure].value(j, q_index);
+          for (const unsigned int i : fe_values.dof_indices())
+            {
+              for (const unsigned int j : fe_values.dof_indices())
+                cell_matrix(i, j) += ((-fe_values.shape_value(i, q_index) *
+                                         fe_values.shape_grad(j, q_index) * n -
+                                       fe_values.shape_value(j, q_index) *
+                                         fe_values.shape_grad(i, q_index) * n +
+                                       par.gamma / cell->face(f)->diameter() *
+                                         fe_values.shape_value(i, q_index) *
+                                         fe_values.shape_value(j, q_index)) *
+                                      fe_values.JxW(q_index)); // dx
+
+              cell_rhs(i) +=
+                ((-fe_values.shape_grad(i, q_index) * n * // - nabla v . n  g
+                    par.exact_solution.value(x_q) +
+                  +par.gamma / cell->face(f)->diameter() * // + gamma/h v g
+                    fe_values.shape_value(i, q_index) *
+                    par.exact_solution.value(x_q)) *
+                 fe_values.JxW(q_index)); // dx
+            }
+        }
+    };
 
 
-                cell_matrix(i, j) +=
-                  (par.eta * scalar_product(grad_phi_i, grad_phi_j) +
-                   div_v_i * q_j + q_i * div_v_j) *
-                  fe_values.JxW(q_index); // dx
-              }
+  auto copier = [&](const auto &copy) {
+    constraints.distribute_local_to_global(copy.matrices[0],
+                                           copy.vectors[0],
+                                           copy.local_dof_indices[0],
+                                           system_matrix,
+                                           system_rhs);
+  };
 
-            const auto &x_q    = fe_values.quadrature_point(q_index);
-            const auto  comp_i = fe.system_to_component_index(i).first;
-
-            if (comp_i < dim)
-              cell_rhs(i) += (v_i[comp_i] * // phi_i(x_q)
-                              par.rhs_function.value(x_q, comp_i) * // f(x_q)
-                              fe_values.JxW(q_index));              // dx
-          }
-
-      cell->get_dof_indices(local_dof_indices);
-      constraints.distribute_local_to_global(
-        cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
-    }
+  // for (const auto &cell : dof_handler.active_cell_iterators())
+  //   {
+  //     cell_worker(cell, scratch_data, copy_data);
+  //     for(const auto &f: cell->face_iterators()) {
+  //       if(cell->face(f)->at_boundary() {
+  //          boundary_worker(cell, f, scratch_data, copy_data);
+  //      } else {
+  //          // figure out who is neighbor, subface, etc
+  //          face_worker(cell, f, sb, ncell, nf, nsf, scratch_data, copy_data);
+  //      }
+  //     copier(copy_data);
+  //   }
+  MeshWorker::mesh_loop(dof_handler.begin_active(),
+                        dof_handler.end(),
+                        cell_worker,
+                        copier,
+                        scratch_data,
+                        copy_data,
+                        MeshWorker::assemble_own_cells |
+                          MeshWorker::assemble_boundary_faces,
+                        boundary_worker);
 }
 
 
 
 template <int dim>
 void
-Stokes<dim>::solve()
+Poisson<dim>::solve()
 {
-  SparseDirectUMFPACK solver;
-  solver.initialize(system_matrix);
-  solver.vmult(solution, system_rhs);
+  SolverControl            solver_control(1000, 1e-12);
+  SolverCG<Vector<double>> solver(solver_control);
+  solver.solve(system_matrix, solution, system_rhs, PreconditionIdentity());
   constraints.distribute(solution);
+
+  std::cout << "   " << solver_control.last_step()
+            << " CG iterations needed to obtain convergence." << std::endl;
 }
 
 
 
 template <int dim>
 void
-Stokes<dim>::output_results(const unsigned int cycle) const
+Poisson<dim>::output_results(const unsigned int cycle) const
 {
-  DataOut<dim>             data_out;
-  std::vector<std::string> names(dim, "velocity");
-  names.push_back("pressure");
-
-  std::vector<DataComponentInterpretation::DataComponentInterpretation>
-    data_component_interpretation(
-      dim, DataComponentInterpretation::component_is_part_of_vector);
-
-  data_component_interpretation.push_back(
-    DataComponentInterpretation::component_is_scalar);
+  DataOut<dim> data_out;
 
   data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(solution,
-                           names,
-                           DataOut<dim>::type_dof_data,
-                           data_component_interpretation);
+  data_out.add_data_vector(solution, "solution");
+  data_out.add_data_vector(estimated_error_per_cell,
+                           "standard_error_estimator");
+  data_out.add_data_vector(kelly_estimated_error_per_cell, "kelly");
 
   data_out.build_patches();
 
@@ -335,10 +494,20 @@ Stokes<dim>::output_results(const unsigned int cycle) const
 
 template <int dim>
 void
-Stokes<dim>::run()
+Poisson<dim>::run()
 {
   std::cout << "Solving problem in " << dim << " space dimensions."
             << std::endl;
+
+  // Prepare convergence table to output estimator as well:
+
+  par.convergence_table.add_extra_column("kelly", [&]() {
+    return kelly_estimated_error_per_cell.l2_norm();
+  });
+
+  par.convergence_table.add_extra_column("standard_error_estimator", [&]() {
+    return estimated_error_per_cell.l2_norm();
+  });
 
   for (unsigned int cycle = 0; cycle < par.n_cycles; ++cycle)
     {
@@ -346,27 +515,14 @@ Stokes<dim>::run()
         make_grid();
       else
         {
-          // Estimate error
-          Vector<float> estimated_error_per_cell(
-            triangulation.n_active_cells());
-          KellyErrorEstimator<dim>::estimate(dof_handler,
-                                             QGauss<dim - 1>(fe.degree + 1),
-                                             {},
-                                             solution,
-                                             estimated_error_per_cell);
-          // Mark for refinement
-          GridRefinement::refine_and_coarsen_fixed_number(
-            triangulation,
-            estimated_error_per_cell,
-            par.top_fraction,
-            par.bottom_fraction);
-
-          // Actually refine
-          triangulation.execute_coarsening_and_refinement();
+          // estimate(); // Already called in after solve
+          mark();
+          refine();
         }
       setup_system();
       assemble_system();
       solve();
+      estimate();
       output_results(cycle);
       par.convergence_table.error_from_exact(dof_handler,
                                              solution,
@@ -381,14 +537,14 @@ int
 main()
 {
   {
-    StokesParameters<2> par;
-    Stokes<2>           laplace_problem_2d(par);
+    PoissonParameters<2> par;
+    Poisson<2>           laplace_problem_2d(par);
     laplace_problem_2d.run();
   }
 
   // {
-  //   StokesParameters<3> par;
-  //   Stokes<3>           laplace_problem_3d(par);
+  //   PoissonParameters<3> par;
+  //   Poisson<3>           laplace_problem_3d(par);
   //   laplace_problem_3d.run();
   // }
 

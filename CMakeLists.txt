@@ -25,14 +25,15 @@ set(NMPDE_DEALII_LAB_TARGETS
   lab-03
   lab-04
   lab-05
-  lab-05b
-  lab-05c
-  lab-05d
-  lab-05e
   lab-06
+  lab-06b
+  lab-06c
+  lab-06d
+  lab-06e
   lab-07
   lab-08
   lab-09
+  lab-10
 )
 
 if(NMPDE_BUILD_LABS)
