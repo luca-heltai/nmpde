@@ -21,14 +21,6 @@ project:
       children:
         - file: laboratories/lab-01.md
         - file: laboratories/lab-02.md
-        - file: laboratories/lab-03.md
-        - file: laboratories/lab-04.md
-        - file: laboratories/lab-05.md
-        - file: laboratories/lab-06.md
-        - file: laboratories/lab-07.md
-        - file: laboratories/lab-08.md
-        - file: laboratories/lab-09.md
-        - file: laboratories/lab-10.md
     - file: projects.md
 
 site:
