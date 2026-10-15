@@ -8,7 +8,7 @@ Your presentation should include all proofs, and a brief introduction for those 
 
 1. [Babuska $\Longleftrightarrow$ Brezzi?](https://www.oden.utexas.edu/media/reports/2006/0608.pdf)
 
-2. [On some techniques for approximating boundary conditions in the finite element method](https://doi.org/10.1016/0377-0427(95)00057-7)
+2. On some techniques for approximating boundary conditions in the finite element method {cite:p}`Stenberg1995`
 
 3. [Analysis of the Shifted Boundary Method for the Poisson Problem in General Domains](https://arxiv.org/pdf/2006.00872)
 
