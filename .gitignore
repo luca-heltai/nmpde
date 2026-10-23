@@ -39,6 +39,9 @@
 **/*.gnuplot
 **/*.log
 
+# Static teaching diagrams for Laboratory 3
+!/notes/assets/lab-03/*.svg
+
 # Local archives, teaching records, and experiments
 /books/
 /lecture_notes_2023_2024/
