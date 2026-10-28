@@ -12,5 +12,10 @@ constructs Lagrange elements on simplices and tensor-product cells, their
 dual bases and conforming global spaces. An optional extension develops
 Raviart–Thomas elements and the Piola transformation.
 
+[Lecture 5 — From local finite elements to the global system](lecture-05.md)
+connects Lagrange DoFs and global numbering to Poisson assembly. Reference-cell
+transformations, quadrature and local-to-global accumulation lead to the
+assembly loop, sparse matrices and Dirichlet boundary conditions.
+
 ```{tableofcontents}
 ```
