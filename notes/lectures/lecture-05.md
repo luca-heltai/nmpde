@@ -579,8 +579,8 @@ patch; a solve with interior nodes will test the free equations.
 ## 8. A reading path for the next laboratories
 
 1. **Geometry and integration.** Identify the mapping, quadrature nodes,
-   values, gradients and `JxW`. Reuse them to integrate a discrete function
-   or compute an interpolation error in Laboratory 4.
+   values, gradients and `JxW`. Begin [Laboratory 4](../laboratories/lab-04.md)
+   with a cellwise area integral, then use the same objects to assemble Poisson.
 2. **Assembly.** Follow `setup_system()` and `assemble_system()` in
    [step-3, deal.II 9.7.1](https://github.com/dealii/dealii/blob/v9.7.1/examples/step-3/step-3.cc).
    Match each operation to a formula in this lecture.

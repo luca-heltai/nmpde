@@ -11,3 +11,6 @@ connectivity, and deal.II abstractions](lab-02.md) then introduces VTK,
 [Laboratory 3 — Mesh objects, degrees of freedom, and global numbering](lab-03.md)
 distinguishes mesh-object indices from local and global DoF indices, develops
 degrees of freedom per object, and explores renumbering with a student starter.
+[Laboratory 4 — From cell integrals to a Poisson solver](lab-04.md)
+uses mapping and quadrature to assemble local contributions, impose Dirichlet
+data and complete a solver following deal.II step-3.
