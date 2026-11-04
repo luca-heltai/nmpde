@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include "figure_generation.h"
+
 #include <deal.II/base/point.h>
 #include <deal.II/grid/grid_generator.h>
 #include <deal.II/grid/grid_out.h>
@@ -21,6 +23,8 @@ namespace
   write_mesh_svg(const dealii::Triangulation<2> &tria,
                  const fs::path                 &filename)
   {
+    if (!CourseFigures::needs_generation(filename))
+      return true;
     fs::create_directories(filename.parent_path());
     std::ofstream output(filename);
     if (!output)

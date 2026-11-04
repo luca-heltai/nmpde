@@ -77,4 +77,14 @@ if(NMPDE_BUILD_TESTS)
 
   include(GoogleTest)
   gtest_discover_tests(nmpde_tests DISCOVERY_MODE PRE_TEST)
+
+  add_executable(nmpde_pacman_tests tests/pacman/pacman.cc)
+  target_compile_definitions(nmpde_pacman_tests PRIVATE
+    NMPDE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+    NMPDE_ASSET_DIR="${CMAKE_SOURCE_DIR}/notes/assets/generated"
+  )
+  target_link_libraries(nmpde_pacman_tests GTest::gtest_main)
+  deal_ii_setup_target(nmpde_pacman_tests)
+  gtest_discover_tests(nmpde_pacman_tests DISCOVERY_MODE PRE_TEST
+    PROPERTIES LABELS "pacman" TIMEOUT 600)
 endif()

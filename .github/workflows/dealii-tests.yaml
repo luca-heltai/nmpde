@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   tests:
@@ -18,9 +19,32 @@ jobs:
     runs-on: ubuntu-latest
     container:
       image: dealii/dealii:v9.7.1-noble
+      options: --user root
     steps:
-      - name: Check out repository
+      - name: Check out repository and commit messages
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Restore generated figures
+        id: figures-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            notes/assets/generated/
+            notes/assets/lecture-06/
+          key: course-figures-v1-9.7.1-${{ runner.os }}-${{ runner.arch }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            course-figures-v1-9.7.1-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Inspect commit and PR regeneration keyword
+        id: figures
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 tests/figure_policy.py --github-output "$GITHUB_OUTPUT"
+
+      - name: Check figure generation policy
+        run: python3 -m unittest discover -s tests -p 'test_figure_policy.py'
 
       - name: Configure CMake
         run: >-
@@ -30,20 +54,58 @@ jobs:
       - name: Build laboratories and tests
         run: cmake --build build --parallel 2
 
-      - name: Run tests and generate course figures
+      - name: Run tests and generate missing or requested numerical outputs
+        env:
+          NMPDE_REGENERATE_FIGURES: ${{ steps.figures.outputs.regenerate }}
         run: ctest --test-dir build --output-on-failure
 
-      - name: Verify generated figures
+      - name: Install rendering dependencies when needed
+        if: steps.figures.outputs.plots == '1' || steps.figures.outputs.paraview == '1'
+        env:
+          NEED_PLOTS: ${{ steps.figures.outputs.plots }}
+          NEED_PARAVIEW: ${{ steps.figures.outputs.paraview }}
         run: |
-          test -s notes/assets/generated/lecture-01-poisson-mesh.svg
-          test -s notes/assets/generated/lab-02-two-quads.svg
-          test -s notes/assets/generated/lab-02-flat-shell.svg
-          test -s notes/assets/generated/lab-02-curved-shell.svg
+          apt-get update
+          set --
+          if [ "$NEED_PLOTS" = 1 ]; then
+            set -- "$@" python3-matplotlib python3-numpy
+          fi
+          if [ "$NEED_PARAVIEW" = 1 ]; then
+            set -- "$@" paraview python3-paraview xvfb xauth
+          fi
+          apt-get install --no-install-recommends -y "$@"
+
+      - name: Generate missing or requested convergence plots and tables
+        if: steps.figures.outputs.plots == '1'
+        env:
+          NMPDE_REGENERATE_FIGURES: ${{ steps.figures.outputs.regenerate }}
+        run: python3 tests/pacman/plot_convergence.py
+
+      - name: Generate missing or requested ParaView images
+        if: steps.figures.outputs.paraview == '1'
+        env:
+          NMPDE_REGENERATE_FIGURES: ${{ steps.figures.outputs.regenerate }}
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: xvfb-run -a pvpython --disable-registry tests/pacman/render_paraview.py
+
+      - name: Verify generated figures
+        run: python3 tests/figure_policy.py --verify
+
+      - name: Save new or regenerated figures
+        if: steps.figures.outputs.regenerate == '1' || steps.figures.outputs.missing == '1'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            notes/assets/generated/
+            notes/assets/lecture-06/
+          key: ${{ steps.figures-cache.outputs.cache-primary-key }}
 
       - name: Upload generated figures
         if: inputs.upload-figures
         uses: actions/upload-artifact@v4
         with:
           name: generated-course-figures
-          path: notes/assets/generated/
+          path: |
+            notes/assets/generated/
+            notes/assets/lecture-06/
           if-no-files-found: error

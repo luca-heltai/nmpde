@@ -5,6 +5,8 @@ CTEST ?= ctest
 CMAKE_GENERATOR ?= Ninja
 PYTHON ?= python3
 PORT ?= 8000
+REGENERATE_FIGURES ?= 0
+export NMPDE_REGENERATE_FIGURES = $(REGENERATE_FIGURES)
 
 .PHONY: all configure labs test assets build site serve clean latex show
 
@@ -21,6 +23,7 @@ test: labs
 	$(CTEST) --test-dir $(BUILD_DIR) --output-on-failure
 
 assets: test
+	$(MAKE) pacman-plots pacman-images
 
 site:
 	cd notes && BASE_URL="$${BASE_URL:-}" ../$(JUPYTER_BOOK) build --html --strict --ci --check-links
@@ -43,3 +46,23 @@ clean:
 
 lab-%: configure
 	$(CMAKE) --build $(BUILD_DIR) --target lab-$* --parallel
+
+# Lecture 6: independent reproduction of the harmonic pacman experiment.
+PACMAN_BUILD_DIR ?= build/pacman-release
+PVPYTHON ?= pvpython
+.PHONY: pacman pacman-plots pacman-images
+pacman:
+	$(CMAKE) -S . -B $(PACMAN_BUILD_DIR) -DCMAKE_BUILD_TYPE=Release \
+		-DNMPDE_BUILD_LABS=OFF -DNMPDE_BUILD_DEALII_LABS=OFF -DNMPDE_BUILD_TESTS=ON
+	$(CMAKE) --build $(PACMAN_BUILD_DIR) --target nmpde_pacman_tests --parallel 2
+	$(CTEST) --test-dir $(PACMAN_BUILD_DIR) -L pacman --output-on-failure
+
+pacman-plots:
+	$(PYTHON) tests/pacman/plot_convergence.py
+
+pacman-images:
+	@if $(PYTHON) tests/figure_policy.py --needs paraview; then \
+		$(PVPYTHON) --disable-registry tests/pacman/render_paraview.py; \
+	else \
+		echo "Both ParaView images already exist; reusing them."; \
+	fi
