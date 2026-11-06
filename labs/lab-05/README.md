@@ -242,7 +242,28 @@ experiment and the Python script: it detects the column and adds an $H^1$
 panel with reference slopes $p$. If needed, finish this final comparison
 after class.
 
-## 4. Deliverables and checks
+## 4. Reference convergence plot
+
+The following computed example shows the expected outcome, using the same
+function, square meshes, degrees $p=1,2,3$, refinement levels $r=1,\ldots,6$
+and `QGauss<2>(p+3)`. The dashed lines show the predicted slopes and are
+anchored at the finest computed point; they are not additional error data.
+
+![Computed interpolation errors in L2 and the full H1 norm, with reference slopes for each polynomial degree.](../../notes/assets/lab-05/convergence.png)
+
+The observed rates on the finest two meshes were:
+
+| Degree | $L^2$ rate | Full $H^1$ rate |
+| --- | --- | --- |
+| 1 | 1.999 | 1.001 |
+| 2 | 3.000 | 2.000 |
+| 3 | 4.000 | 3.000 |
+
+This reference run used the instructor's local deal.II 9.8.0-rc1 installation.
+Use the course 9.7.1 environment for your work. Compare slopes and numerical
+checks; reproduce your own CSV and graph from your completed source.
+
+## 5. Deliverables and checks
 
 Submit your completed source, `errors.csv` and `convergence.png`, with a short
 comment reporting:
