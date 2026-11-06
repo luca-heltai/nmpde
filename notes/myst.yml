@@ -27,6 +27,7 @@ project:
         - file: laboratories/lab-02.md
         - file: laboratories/lab-03.md
         - file: laboratories/lab-04.md
+        - file: laboratories/lab-05.md
     - file: projects.md
 
 site:

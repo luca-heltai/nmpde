@@ -14,3 +14,7 @@ degrees of freedom per object, and explores renumbering with a student starter.
 [Laboratory 4 — From cell integrals to a Poisson solver](lab-04.md)
 uses mapping and quadrature to assemble local contributions, impose Dirichlet
 data and complete a solver following deal.II step-3.
+[Laboratory 5 — Interpolation errors and convergence](lab-05.md)
+reconstructs an interpolant at quadrature points, computes its error in
+$L^2$ manually, and studies convergence for several polynomial degrees.
+The final step introduces deal.II error integration and the full $H^1$ norm.

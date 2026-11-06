@@ -1,369 +1,256 @@
-# Lab: Solving the Poisson Equation in deal.II
-
-This laboratory session is designed to help you understand how to solve the Poisson equation using the deal.II library. You will learn how to create and refine meshes, handle degrees of freedom, define finite elements, assemble and solve the system of equations, and visualize the results.
-
-## Objectives
-
-By the end of this laboratory, you should be able to:
-
-1. Create and refine meshes using the `Triangulation` class.
-2. Set up and distribute degrees of freedom using the `DoFHandler` class.
-3. Define finite elements with the `FE_Q` class.
-4. Assemble the system of equations for a Poisson problem.
-5. Solve the system using an iterative solver.
-6. Output solutions using the `DataOut` class.
-7. Compute and validate the solution by comparing with the exact solution.
-
-## Example Code
-
-Here is the example code snippet provided to you:
-
-```cpp
-#include <deal.II/base/function.h>
-#include <deal.II/base/function_lib.h>
-#include <deal.II/base/function_parser.h>
-#include <deal.II/base/logstream.h>
-#include <deal.II/base/parameter_handler.h>
-#include <deal.II/base/quadrature_lib.h>
-
-#include <deal.II/dofs/dof_handler.h>
-#include <deal.II/dofs/dof_tools.h>
-
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_values.h>
-
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/tria.h>
-
-#include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/lac/vector.h>
-
-#include <deal.II/numerics/data_out.h>
-#include <deal.II/numerics/matrix_tools.h>
-#include <deal.II/numerics/vector_tools.h>
-
-#include <fstream>
-#include <iostream>
-
-using namespace dealii;
-
-template <int dim>
-struct PoissonParameters
-{
-  PoissonParameters()
-  {
-    prm.enter_subsection("Poisson parameters");
-    {
-      prm.add_parameter("Finite element degree", fe_degree);
-      prm.add_parameter("Initial refinement", initial_refinement);
-      prm.add_parameter("Number of cycle", n_cycles);
-      prm.add_parameter("Exact solution expression", exact_solution_expression);
-      prm.add_parameter("Right hand side expression", rhs_expression);
-    }
-    prm.leave_subsection();
-
-    try
-      {
-        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
-      }
-    catch (std::exception &exc)
-      {
-        prm.print_parameters("poisson_" + std::to_string(dim) + "d.prm");
-        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
-      }
-    std::map<std::string, double> constants;
-    constants["pi"] = numbers::PI;
-    exact_solution.initialize(FunctionParser<dim>::default_variable_names(),
-                              {exact_solution_expression},
-                              constants);
-    rhs_function.initialize(FunctionParser<dim>::default_variable_names(),
-                            {rhs_expression},
-                            constants);
-  }
-  unsigned int fe_degree                 = 1;
-  unsigned int initial_refinement        = 3;
-  unsigned int n_cycles                  = 1;
-  std::string  exact_solution_expression = "cos(pi*x)*cos(pi*y)";
-  std::string  rhs_expression            = "2*pi*pi*cos(pi*x)*cos(pi*y)";
-
-  FunctionParser<dim> exact_solution;
-  FunctionParser<dim> rhs_function;
-
-  ParameterHandler prm;
-};
-
-
-
-template <int dim>
-class Poisson
-{
-public:
-  Poisson(const PoissonParameters<dim> &parameters);
-  void
-  run();
-
-private:
-  void
-  make_grid();
-  void
-  setup_system();
-  void
-  assemble_system();
-  void
-  solve();
-  void
-  output_results() const;
-
-  const PoissonParameters<dim> &par;
-
-  Triangulation<dim> triangulation;
-  FE_Q<dim>          fe;
-  DoFHandler<dim>    dof_handler;
-
-  SparsityPattern      sparsity_pattern;
-  SparseMatrix<double> system_matrix;
-
-  Vector<double> solution;
-  Vector<double> system_rhs;
-};
-
-
-
-template <int dim>
-Poisson<dim>::Poisson(const PoissonParameters<dim> &par)
-  : par(par)
-  , fe(par.fe_degree)
-  , dof_handler(triangulation)
-{}
-
-
-
-template <int dim>
-void
-Poisson<dim>::make_grid()
-{
-  GridGenerator::hyper_cube(triangulation, -1, 1);
-  triangulation.refine_global(par.initial_refinement);
-
-  std::cout << "   Number of active cells: " << triangulation.n_active_cells()
-            << std::endl
-            << "   Total number of cells: " << triangulation.n_cells()
-            << std::endl;
-}
-
-
-template <int dim>
-void
-Poisson<dim>::setup_system()
-{
-  dof_handler.distribute_dofs(fe);
-
-  std::cout << "   Number of degrees of freedom: " << dof_handler.n_dofs()
-            << std::endl;
-
-  DynamicSparsityPattern dsp(dof_handler.n_dofs());
-  DoFTools::make_sparsity_pattern(dof_handler, dsp);
-  sparsity_pattern.copy_from(dsp);
-
-  system_matrix.reinit(sparsity_pattern);
-
-  solution.reinit(dof_handler.n_dofs());
-  system_rhs.reinit(dof_handler.n_dofs());
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::assemble_system()
-{
-  QGauss<dim> quadrature_formula(fe.degree + 1);
-
-  FEValues<dim> fe_values(fe,
-                          quadrature_formula,
-                          update_values | update_gradients |
-                            update_quadrature_points | update_JxW_values);
-
-  const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
-
-  FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
-  Vector<double>     cell_rhs(dofs_per_cell);
-
-  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-
-  for (const auto &cell : dof_handler.active_cell_iterators())
-    {
-      fe_values.reinit(cell);
-      cell_matrix = 0;
-      cell_rhs    = 0;
-
-      for (const unsigned int q_index : fe_values.quadrature_point_indices())
-        for (const unsigned int i : fe_values.dof_indices())
-          {
-            for (const unsigned int j : fe_values.dof_indices())
-              cell_matrix(i, j) +=
-                (fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
-                 fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
-                 fe_values.JxW(q_index));           // dx
-
-            const auto &x_q = fe_values.quadrature_point(q_index);
-            cell_rhs(i) += (fe_values.shape_value(i, q_index) * // phi_i(x_q)
-                            par.rhs_function.value(x_q) *       // f(x_q)
-                            fe_values.JxW(q_index));            // dx
-          }
-
-      cell->get_dof_indices(local_dof_indices);
-      for (const unsigned int i : fe_values.dof_indices())
-        {
-          for (const unsigned int j : fe_values.dof_indices())
-            system_matrix.add(local_dof_indices[i],
-                              local_dof_indices[j],
-                              cell_matrix(i, j));
-
-          system_rhs(local_dof_indices[i]) += cell_rhs(i);
-        }
-    }
-
-  std::map<types::global_dof_index, double> boundary_values;
-  VectorTools::interpolate_boundary_values(dof_handler,
-                                           0,
-                                           par.exact_solution,
-                                           boundary_values);
-  MatrixTools::apply_boundary_values(boundary_values,
-                                     system_matrix,
-                                     solution,
-                                     system_rhs);
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::solve()
-{
-  SolverControl            solver_control(1000, 1e-12);
-  SolverCG<Vector<double>> solver(solver_control);
-  solver.solve(system_matrix, solution, system_rhs, PreconditionIdentity());
-
-  std::cout << "   " << solver_control.last_step()
-            << " CG iterations needed to obtain convergence." << std::endl;
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::output_results() const
-{
-  DataOut<dim> data_out;
-
-  data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(solution, "solution");
-
-  data_out.build_patches();
-
-  std::ofstream output(dim == 2 ? "solution-2d.vtu" : "solution-3d.vtu");
-  data_out.write_vtu(output);
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::run()
-{
-  std::cout << "Solving problem in " << dim << " space dimensions."
-            << std::endl;
-
-  make_grid();
-  setup_system();
-  assemble_system();
-  solve();
-  output_results();
-}
-
-
-
-int
-main()
-{
-  {
-    PoissonParameters<2> par;
-    Poisson<2>           laplace_problem_2d(par);
-    laplace_problem_2d.run();
-  }
-
-  {
-    PoissonParameters<3> par;
-    Poisson<3>           laplace_problem_3d(par);
-    laplace_problem_3d.run();
-  }
-
-  return 0
-
-;
-}
+# Lab 5: Interpolation errors and convergence
+
+One exercise leads from a known smooth function to a convergence plot. You
+will construct its finite element interpolant, evaluate it locally by hand,
+integrate its error in $L^2$, and compare your calculations with deal.II.
+The final step computes the error in the full $H^1$ norm.
+
+## 1. Function, mesh and expected convergence
+
+Use the square $\Omega=(-1,1)^2$, uniform square meshes, `MappingQ1<2>` and
+continuous tensor-product elements `FE_Q<2>(p)`, with $p=1,2,3$.
+The exact function is `Functions::CosineFunction<2>`:
+
+$$
+u(x,y)=\cos(\pi x/2)\cos(\pi y/2).
+$$
+
+It is smooth and vanishes on the boundary. There is no differential equation
+to solve in this exercise. The vector represents the nodal interpolant
+$I_hu$, determined by $(I_hu)(a_I)=u(a_I)$ at every global support point $a_I$.
+The mesh has no hanging nodes, so no constraints are needed.
+
+After $r$ global refinements, the cell side length is $h=2/2^r$,
+the number of cells is $4^r$, and the number of DoFs is $(p\,2^r+1)^2$.
+The cell diameter is $\sqrt{2}h$; this constant factor does not change slopes.
+
+Recall the reference-element interpolation and scaling argument from
+[Lecture 3](../../notes/lectures/lecture-03.md). On this family of affine
+square meshes the tensor-product nodal interpolant reproduces $Q_p$, which
+contains all polynomials of total degree at most $p$. The same argument gives,
+for a smooth function and **each fixed degree** $p$,
+
+$$
+\|u-I_hu\|_{L^2(\Omega)}\le C_p h^{p+1}|u|_{H^{p+1}(\Omega)},
+\qquad
+|u-I_hu|_{H^1(\Omega)}\le C_p h^p|u|_{H^{p+1}(\Omega)}.
+$$
+
+The constants are independent of $h$ and can depend on $p$ and the reference
+nodes. Nodal values are well defined here because $u$ is smooth. Conformity
+allows us to sum the cell gradient integrals to obtain the global seminorm.
+Combining both estimates gives an order-$h^p$ bound for the full $H^1$ norm
+on the meshes used below ($h\le1$).
+
+Thus we expect slopes $p+1$ in $L^2$ and $p$ in $H^1$ as $h\to0$.
+These are upper bounds; the experiment checks whether the predicted orders
+are observed for this function. They do not prove a uniform-in-$p$ convergence
+rate when only the polynomial degree is increased on a fixed mesh.
+
+## 2. Build and run the student starter
+
+The root target `lab-05` builds
+[`interpolation-starter.cc`](../../labs/lab-05/interpolation-starter.cc).
+The historical Poisson implementation remains in `lab-05.cc` and is not the
+source of this target. Use the course deal.II **9.7.1** environment.
+
+From the repository root:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --target lab-05 --parallel 2
+mkdir -p build/runs/lab-05
+cd build/runs/lab-05
+../../bin/lab-05
 ```
 
-## Exercises
+The untouched starter compiles and stops with a `TODO 1` message and exit
+code 1. It writes only the CSV header. Complete each TODO and remove its
+associated exception. Rebuild from the repository root after editing.
+Run in this dedicated directory: each run replaces `errors.csv` there.
 
-### Exercise 1: Understanding the PoissonParameters Class
+First work with the supplied single case $p=1$, $r=2$. Check 16 cells and 25
+DoFs. Keep the loops over degree and refinement for point 5.
 
-1. **Parameter File:**
-   - Create a parameter file named `poisson_2d.prm` and `poisson_3d.prm` with the following contents:
+## 3. A single exercise in six steps
 
-     ```
-     subsection Poisson parameters
-       set Finite element degree = 1
-       set Initial refinement = 3
-       set Number of cycle = 1
-       set Exact solution expression = cos(pi*x)*cos(pi*y)
-       set Right hand side expression = 2*pi*pi*cos(pi*x)*cos(pi*y)
-     end
-     ```
+### Step 1. Construct the nodal interpolant
 
-   - Ensure these files are in the same directory as your executable.
+The starter supplies the mesh, finite element, `DoFHandler`, exact function
+and a global coefficient vector `interpolated` of the correct size.
+Complete TODO 1 using:
 
-2. **Modify Parameters:**
-   - Change the `Finite element degree` and `Initial refinement` parameters in the parameter files and observe how they affect the solution.
+```cpp
+VectorTools::interpolate(dof_handler, exact, interpolated);
+```
 
-### Exercise 2: Creating and Refining Meshes
+This assigns $U_I=u(a_I)$ to every nodal coefficient. The coefficients are
+values at support points; quadrature points generally lie elsewhere.
 
-1. **Mesh Creation:**
-   - Modify the `make_grid` function to create different types of meshes using `GridGenerator`, such as `hyper_ball` and `subdivided_hyper_rectangle`.
-   - Print the number of active cells and total cells for each mesh.
-   - Use `GridGenerator::generate_from_name_and_arguments`, and add two paramaters to the parameter file to generate the grid from the function name (i.e., `hyper_cube`, or `hyper_shell`) and the function arguments
+### Step 2. Evaluate the local interpolant by hand
 
-### Exercise 3: Assembling and Solving the System
+For a cell $K$, write $g_K(i)$ for its local-to-global DoF map. Its local
+interpolating polynomial, evaluated at a physical quadrature point $x_q$, is
 
-1. **Understanding Assembly:**
-   - Add comments to the `assemble_system` function to explain each step in the assembly process.
-   - Modify the assembly process to use different quadrature formulas and observe how this affects the solution accuracy.
+$$
+(I_hu)|_K(x_q)=\sum_{i=0}^{n_K-1} U_{g_K(i)}\varphi_{K,i}(x_q).
+$$
 
-2. **Solving the System:**
-   - Experiment with different solvers and preconditioners available in deal.II, such as `SolverGMRES` and `PreconditionJacobi`.
-   - Compare the number of iterations needed for convergence and the accuracy of the solution.
+Complete TODO 2 with two loops: one over quadrature points and one over local
+basis functions. Accumulate the sum in `manual_values[q]`.
 
-### Exercise 4: Output and Visualization
+Use these objects already supplied by the starter:
 
-1. **Output Solutions:**
-   - Output the solution to different formats, such as `VTU` and `VTK`.
-   - Use Paraview to visualize the solutions and create contour plots.
+- `cell->get_dof_indices(indices)` gives $g_K$;
+- `interpolated[indices[i]]` gives $U_{g_K(i)}$;
+- `fe_values.shape_value(i,q)` gives $\varphi_{K,i}(x_q)$ after `reinit(cell)`.
 
-2. **Higher-Order Output:**
-   - Modify the `output_results` function to output higher-order elements by adjusting the `DataOut` settings.
-   - Visualize the higher-order solutions and compare them with the linear solutions.
+Initialize every sum to zero for each cell. Explain why using
+`interpolated[i]` in this formula would generally be incorrect. You are
+evaluating a polynomial from its nodal coefficients, so calling
+`exact.value(x_q)` cannot replace this local calculation.
 
-### Exercise 5: Error Analysis
+### Step 3. Compare with FEValues::get_function_values
 
-1. **Compute Errors:**
-   - Compute the $L^2$ and $H^1$ errors of the solution using `VectorTools::integrate_difference`.
-   - Compare these errors with the analytical errors obtained from the exact solution.
+After the manual evaluation works, complete TODO 3 using:
 
-2. **Error Convergence:**
-   - Refine the mesh globally multiple times and compute the errors for each refinement level.
-   - Plot the errors as a function of the number of degrees of freedom and analyze the convergence rates.
+```cpp
+fe_values.get_function_values(interpolated, library_values);
+```
+
+This performs the local-to-global lookup and basis-function summation from
+step 2. The input is the global coefficient vector; the output has one value
+per quadrature point on the current cell. Call it again after each cell's
+`reinit`.
+
+Compare `manual_values[q]` and `library_values[q]` at **every quadrature point
+of every cell**. Update `max_value_difference` with the largest absolute
+difference. For this function, whose magnitude is at most one, require
+`max_value_difference < 1e-12`. Report the maximum to the terminal.
+This checks two evaluations of the same interpolant; it does not measure its
+approximation error relative to $u$.
+
+### Step 4. Integrate the L2 error by hand
+
+The error to compute is
+
+$$
+E_{L^2}=\left(\sum_K\int_K |u(x)-I_hu(x)|^2\,dx\right)^{1/2}.
+$$
+
+Quadrature gives
+
+$$
+E_{L^2}^2\approx\sum_K\sum_q
+\bigl[u(x_q)-\texttt{manual\_values}[q]\bigr]^2
+\underbrace{w_q|\det DF_K(\widehat x_q)|}_{\texttt{fe\_values.JxW(q)}}.
+$$
+
+Complete TODO 4. Obtain $x_q$ with `fe_values.quadrature_point(q)` and evaluate
+$u(x_q)$ with `exact.value`. Accumulate **squared** differences times `JxW`
+over every cell. Take the square root only after the global sum.
+
+The starter requests `update_values`, `update_quadrature_points` and
+`update_JxW_values`; connect each flag to one quantity in the formula.
+Do not multiply by the cell area again: `JxW` already contains the Jacobian.
+The Euclidean norm of the coefficient vector is not the spatial $L^2$ norm.
+
+Use `QGauss<2>(p+3)` initially. The squared error is not polynomial because it
+contains the cosine. Repeat a case with `QGauss<2>(p+5)` and check that the
+relative change in the reported error is below $10^{-6}$, away from roundoff.
+If it is larger, increase the quadrature order before interpreting slopes.
+
+### Step 5. Write a CSV and produce the convergence plot
+
+Replace the single case in `main` with loops over $p=1,2,3$ and
+$r=1,\ldots,6$. Each call constructs a fresh mesh and finite element. The
+starter already writes a CSV header and one row per completed case:
+
+```text
+degree,refinement,h,dofs,l2
+```
+
+Use ordinary stream output with the supplied precision. You do not need an
+error-table class. Check the DoF counts against $(p\,2^r+1)^2$.
+
+The provided [`plot_convergence.py`](../../labs/lab-05/plot_convergence.py) uses Matplotlib and
+groups the rows by degree. From `build/runs/lab-05`, run:
+
+```bash
+python3 ../../../labs/lab-05/plot_convergence.py errors.csv
+```
+
+It writes `convergence.png`: a log–log plot of $E_{L^2}$ against $h$, with one
+curve per degree and dashed lines of slopes $p+1$. It also prints the observed
+rate from the finest two meshes:
+
+$$
+\mathrm{rate}=\frac{\log(E(h)/E(h/2))}{\log 2}.
+$$
+
+Expect rates approaching 2, 3 and 4 for $p=1,2,3$. Explain why halving $h$
+should approximately divide the error by $2^{p+1}$ in the asymptotic regime.
+Compare several refinements and check quadrature before interpreting a
+discrepancy. Very small errors can be affected by roundoff.
+
+### Step 6. Use deal.II error integration and compute the H1 norm
+
+After the manual calculation and the first plot, use the following facilities
+at the end of `run_case`:
+
+```cpp
+Vector<double> cell_errors(triangulation.n_active_cells());
+VectorTools::integrate_difference(mapping,
+                                 dof_handler,
+                                 interpolated,
+                                 exact,
+                                 cell_errors,
+                                 quadrature,
+                                 VectorTools::L2_norm);
+const double library_l2 =
+  VectorTools::compute_global_error(triangulation,
+                                   cell_errors,
+                                   VectorTools::L2_norm);
+```
+
+`integrate_difference` returns one cell error norm per active cell.
+`compute_global_error` combines them into the global norm. In $L^2$ it takes
+the square root of the sum of the **squares** of these cell norms.
+
+Compare `library_l2` with your manual error using the same mapping,
+interpolant and quadrature. Require a relative difference below $10^{-10}$
+for the proposed cases, where the error is well above roundoff. Agreement
+checks the manual integration; the separate quadrature check is still needed.
+
+Now compute the **full** $H^1$ error:
+
+$$
+E_{H^1}=\left(\int_\Omega |u-I_hu|^2
+                  +|\nabla u-\nabla I_hu|^2\,dx\right)^{1/2}.
+$$
+
+Make a second call to `integrate_difference` with `VectorTools::H1_norm`,
+then combine the cell errors with `compute_global_error` using the same norm.
+`CosineFunction` already provides the exact gradient. The error-integration
+routine creates the required evaluation objects internally.
+
+The option `H1_seminorm` would compute only the gradient term. Keep the full
+norm requested here and check $E_{H^1}\ge E_{L^2}$, up to roundoff.
+
+Append an `h1` column to both the CSV header and every data row. Rerun the
+experiment and the Python script: it detects the column and adds an $H^1$
+panel with reference slopes $p$. If needed, finish this final comparison
+after class.
+
+## 4. Deliverables and checks
+
+Submit your completed source, `errors.csv` and `convergence.png`, with a short
+comment reporting:
+
+- the maximum difference between manual and `get_function_values` evaluations;
+- agreement of the manual and deal.II $L^2$ errors and the quadrature check;
+- the observed $L^2$ rates for all three degrees;
+- the full $H^1$ errors and their rates when the final step is complete.
+
+A graph alone is insufficient: include the numerical checks and explain the
+predicted slopes using the interpolation estimates.
