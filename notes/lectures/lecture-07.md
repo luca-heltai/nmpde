@@ -64,6 +64,52 @@ and $\|Eg\|_{1,\Omega}\leq C\|g\|_{1/2,\partial\Omega}$.
 
 This Sobolev-space theorem is used without proof; see
 {cite:ts}`BrennerScott2010` and {cite:ts}`ErnGuermond2004`.
+
+```{note} Higher-order traces and boundary regularity
+For $s>1/2$, the corresponding trace and lifting maps are
+
+$$
+\gamma_s:H^s(\Omega)\longrightarrow H^{s-1/2}(\partial\Omega),\qquad
+E_s:H^{s-1/2}(\partial\Omega)\longrightarrow H^s(\Omega),
+$$
+
+with $\gamma_sE_sg=g$ and
+
+$$
+\|\gamma_sv\|_{s-1/2,\partial\Omega}\leq C\|v\|_{s,\Omega},\qquad
+\|E_sg\|_{s,\Omega}\leq C\|g\|_{s-1/2,\partial\Omega}.
+$$
+
+The trace is bounded and surjective, agrees with classical restriction on
+smooth functions, and has the bounded linear right inverse $E_s$, under the
+following boundary assumptions on a bounded domain:
+
+- **Lipschitz boundary:** the standard result holds for $1/2<s<3/2$; see
+  [Gaudin, Theorem 1.1](https://arxiv.org/pdf/2305.01441), with integrability
+  exponent $2$.
+- **Finite boundary regularity:** a sufficient condition for $1/2<s\leq m$,
+  where $m\geq1$ is an integer, is $\partial\Omega$ of class $C^{m-1,1}$.
+  This means that local boundary graphs have Lipschitz derivatives of order
+  $m-1$; for $m=1$ the graphs themselves are Lipschitz. In particular,
+  $C^{1,1}$ suffices for $s=2$. See
+  [McLean, Theorem 2.2](https://web.maths.unsw.edu.au/~mclean/bie.pdf).
+  This is a sufficient condition, without a claim of optimality.
+- **Smooth boundary:** if $\partial\Omega$ is $C^\infty$, the result holds
+  for every finite $s>1/2$.
+
+The boundary Sobolev space is defined using local charts and a partition of
+unity. The constants depend on $s$ and the domain's chart bounds. The strict
+lower threshold $s>1/2$ is essential for this Sobolev trace theorem even on a
+smooth domain. The Lipschitz statement above does not include $s=3/2$ and
+does not justify arbitrary higher orders on polygonal boundaries; smoothness
+of the individual edges does not give global boundary smoothness at vertices.
+
+The kernel assertion also requires care at higher orders. On a smooth domain,
+membership in $H_0^2(\Omega)$ requires both the value and the normal derivative
+to have zero trace; $\gamma_2v=0$ alone is insufficient. See
+[Lamberti–Provenzano, Theorem 2.9](https://arxiv.org/pdf/1910.03971).
+```
+
 The boundary norm has the equivalent characterization
 
 $$
