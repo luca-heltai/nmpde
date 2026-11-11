@@ -21,6 +21,7 @@ project:
         - file: lectures/lecture-04.md
         - file: lectures/lecture-05.md
         - file: lectures/lecture-06.md
+        - file: lectures/lecture-07.md
     - file: laboratories/index.md
       children:
         - file: laboratories/lab-01.md
