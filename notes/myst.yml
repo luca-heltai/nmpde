@@ -33,7 +33,8 @@ project:
     - file: projects.md
 
 site:
-  template: book-theme
+  # Pin the theme to the version supported by Jupyter Book 2.1.6.
+  template: https://github.com/jupyter-book/myst-theme/releases/download/myst-to-react%401.4.1/book-theme.zip
   options:
     folders: true
     logo: ./figures/logo.png
