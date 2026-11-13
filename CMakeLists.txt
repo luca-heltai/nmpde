@@ -47,6 +47,8 @@ if(NMPDE_BUILD_LABS AND NMPDE_BUILD_DEALII_LABS)
       add_executable(${lab} "labs/lab-04/step-3-starter.cc")
     elseif(lab STREQUAL "lab-05")
       add_executable(${lab} "labs/lab-05/interpolation-starter.cc")
+    elseif(lab STREQUAL "lab-06")
+      add_executable(${lab} "labs/lab-06/poisson-starter.cc")
     else()
       add_executable(${lab} "labs/${lab}/${lab}.cc")
     endif()
@@ -79,6 +81,14 @@ if(NMPDE_BUILD_TESTS)
 
   include(GoogleTest)
   gtest_discover_tests(nmpde_tests DISCOVERY_MODE PRE_TEST)
+
+  add_executable(nmpde_lab06_tests tests/lab06_poisson.cc)
+  target_compile_definitions(nmpde_lab06_tests PRIVATE
+    NMPDE_ASSET_DIR="${CMAKE_SOURCE_DIR}/notes/assets/generated/lab-06")
+  target_link_libraries(nmpde_lab06_tests GTest::gtest_main)
+  deal_ii_setup_target(nmpde_lab06_tests)
+  gtest_discover_tests(nmpde_lab06_tests DISCOVERY_MODE PRE_TEST
+    PROPERTIES LABELS "lab06" TIMEOUT 120)
 
   add_executable(nmpde_pacman_tests tests/pacman/pacman.cc)
   target_compile_definitions(nmpde_pacman_tests PRIVATE

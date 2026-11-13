@@ -79,7 +79,9 @@ jobs:
         if: steps.figures.outputs.plots == '1'
         env:
           NMPDE_REGENERATE_FIGURES: ${{ steps.figures.outputs.regenerate }}
-        run: python3 tests/pacman/plot_convergence.py
+        run: |
+          python3 tests/pacman/plot_convergence.py
+          python3 labs/lab-06/plot_results.py
 
       - name: Generate missing or requested ParaView images
         if: steps.figures.outputs.paraview == '1'

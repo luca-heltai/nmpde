@@ -18,3 +18,7 @@ data and complete a solver following deal.II step-3.
 reconstructs an interpolant at quadrature points, computes its error in
 $L^2$ manually, and studies convergence for several polynomial degrees.
 The final step introduces deal.II error integration and the full $H^1$ norm.
+[Laboratory 6 — Poisson with nonhomogeneous Dirichlet data](lab-06.md)
+uses one manufactured solution to define the forcing and boundary values,
+measures convergence in $L^2$ and the full $H^1$ norm, and visualizes a
+two-peak solution in ParaView.

@@ -23,7 +23,7 @@ test: labs
 	$(CTEST) --test-dir $(BUILD_DIR) --output-on-failure
 
 assets: test
-	$(MAKE) pacman-plots pacman-images
+	$(MAKE) pacman-plots pacman-images lab06-plots
 
 site:
 	cd notes && BASE_URL="$${BASE_URL:-}" ../$(JUPYTER_BOOK) build --html --strict --ci --check-links
@@ -66,3 +66,7 @@ pacman-images:
 	else \
 		echo "Both ParaView images already exist; reusing them."; \
 	fi
+
+.PHONY: lab06-plots
+lab06-plots:
+	$(PYTHON) labs/lab-06/plot_results.py

@@ -110,3 +110,21 @@ Per il solo esperimento numerico: `make pacman REGENERATE_FIGURES=1`.
 Gli script Python accettano `--force`; i test C++ leggono
 `NMPDE_REGENERATE_FIGURES=1`. In assenza di questa richiesta, gli output già
 presenti conservano contenuto e data di modifica.
+
+## Laboratorio 6: Poisson con Dirichlet non omogeneo
+
+Il target `lab-06` compila `labs/lab-06/poisson-starter.cc`; il sorgente storico
+`lab-06.cc` è conservato. I test `nmpde_lab06_tests` calcolano soluzioni
+manufatte, errori deal.II in L2 e H1 completo e dati per le figure:
+
+```bash
+cmake --build build --target lab-06 nmpde_lab06_tests --parallel 2
+ctest --test-dir build -L lab06 --no-tests=error --output-on-failure
+make lab06-plots PYTHON=python3
+```
+
+NumPy e Matplotlib sono necessari per i grafici. La pipeline `make all` e la CI
+includono questa generazione. Gli output sono in `notes/assets/generated/lab-06/`;
+per rigenerarli usare `NMPDE_REGENERATE_FIGURES=1` con test e script, oppure
+`make all REGENERATE_FIGURES=1`. I test numerici vengono sempre eseguiti;
+i file già presenti sono conservati senza richiesta esplicita di rigenerazione.

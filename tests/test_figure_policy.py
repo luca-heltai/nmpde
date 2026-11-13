@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 
-from figure_policy import main, needs_generation, requested_by_event, PLOT_NAMES, PARAVIEW_NAMES
+from figure_policy import main, needs_generation, requested_by_event, PLOT_NAMES, PARAVIEW_NAMES, LAB06_PLOT_NAMES
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -58,7 +58,7 @@ class FigurePolicy(unittest.TestCase):
     def test_cached_scripts_preserve_outputs_without_rendering_dependencies(self):
         with tempfile.TemporaryDirectory() as folder, patch.dict(os.environ, {"NMPDE_REGENERATE_FIGURES": "0"}):
             folder = Path(folder)
-            for name in [*PLOT_NAMES, *PARAVIEW_NAMES]:
+            for name in [*PLOT_NAMES, *PARAVIEW_NAMES, *LAB06_PLOT_NAMES]:
                 (folder / name).write_text("existing output")
             before = {p.name: (p.stat().st_mtime_ns, p.read_bytes()) for p in folder.iterdir()}
             # The standard Python interpreter need not provide Matplotlib or
@@ -67,6 +67,8 @@ class FigurePolicy(unittest.TestCase):
                                    ("render_paraview.py", "--output")]:
                 subprocess.run([sys.executable, str(ROOT / "tests/pacman" / script),
                                 option, str(folder)], check=True, capture_output=True)
+            subprocess.run([sys.executable, str(ROOT / "labs/lab-06/plot_results.py"),
+                            "--data", str(folder)], check=True, capture_output=True)
             after = {p.name: (p.stat().st_mtime_ns, p.read_bytes()) for p in folder.iterdir()}
             self.assertEqual(before, after)
 

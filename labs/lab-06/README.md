@@ -1,517 +1,231 @@
-# Lab 6: Improving the Poisson Solver (ParsedConvergenceTable and AffineConstraints)
-
-This laboratory session is designed to help you understand how to improve the Poisson solver to analyze the convergence of your numerical solutions, and enable local refinement. You will learn how to create locally refined meshes, handle degrees of freedom with hanging nodes, and compute convergence rates.
-
-## Objectives
-
-By the end of this laboratory, you should be able to:
-
-1. Create locally refined meshes, and use hanging node constraintgs
-2. Replace `MatrixTools::apply_boundary_values` with `AffineConstraints`
-3. Analyze convergence rates using the `ParsedConvergenceTable` class.
-
-## Example Code
-
-Here is the example code snippet provided to you:
-
-```cpp
-#include <deal.II/base/function.h>
-#include <deal.II/base/function_lib.h>
-#include <deal.II/base/function_parser.h>
-#include <deal.II/base/logstream.h>
-#include <deal.II/base/parameter_handler.h>
-#include <deal.II/base/parsed_convergence_table.h>
-#include <deal.II/base/quadrature_lib.h>
-
-#include <deal.II/dofs/dof_handler.h>
-#include <deal.II/dofs/dof_tools.h>
-
-#include <deal.II/fe/fe_q.h>
-#include <deal.II/fe/fe_values.h>
-
-#include <deal.II/grid/grid_generator.h>
-#include <deal.II/grid/tria.h>
-
-#include <deal.II/lac/affine_constraints.h>
-#include <deal.II/lac/dynamic_sparsity_pattern.h>
-#include <deal.II/lac/full_matrix.h>
-#include <deal.II/lac/precondition.h>
-#include <deal.II/lac/solver_cg.h>
-#include <deal.II/lac/sparse_matrix.h>
-#include <deal.II/lac/vector.h>
-
-#include <deal.II/numerics/data_out.h>
-#include <deal.II/numerics/matrix_tools.h>
-#include <deal.II/numerics/vector_tools.h>
-
-#include <fstream>
-#include <iostream>
-
-using namespace dealii;
-
-template <int dim>
-struct PoissonParameters
-{
-  PoissonParameters()
-  {
-    prm.enter_subsection("Poisson parameters");
-    {
-      prm.add_parameter("Finite element degree", fe_degree);
-      prm.add_parameter("Initial refinement", initial_refinement);
-      prm.add_parameter("Number of cycles", n_cycles);
-      prm.add_parameter("Exact solution expression", exact_solution_expression);
-      prm.add_parameter("Right hand side expression", rhs_expression);
-    }
-    prm.leave_subsection();
-
-    prm.enter_subsection("Convergence table");
-    convergence_table.add_parameters(prm);
-    prm.leave_subsection();
-
-    try
-      {
-        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
-      }
-    catch (std::exception &exc)
-      {
-        prm.print_parameters("poisson_" + std::to_string(dim) + "d.prm");
-        prm.parse_input("poisson_" + std::to_string(dim) + "d.prm");
-      }
-    std::map<std::string, double> constants;
-    constants["pi"] = numbers::PI;
-    exact_solution.initialize(FunctionParser<dim>::default_variable_names(),
-                              {exact_solution_expression},
-                              constants);
-    rhs_function.initialize(FunctionParser<dim>::default_variable_names(),
-                            {rhs_expression},
-                            constants);
-  }
-  unsigned int fe_degree                 = 1;
-  unsigned int initial_refinement        = 3;
-  unsigned int n_cycles                  = 1;
-  std::string  exact_solution_expression = "cos(pi*x)*cos(pi*y)";
-  std::string  rhs_expression            = "2*pi*pi*cos(pi*x)*cos(pi*y)";
-
-  FunctionParser<dim> exact_solution;
-  FunctionParser<dim> rhs_function;
-
-  mutable ParsedConvergenceTable convergence_table;
-
-  ParameterHandler prm;
-};
-
-
-
-template <int dim>
-class Poisson
-{
-public:
-  Poisson(const PoissonParameters<dim> &parameters);
-  void
-  run();
-
-private:
-  void
-  make_grid();
-  void
-  setup_system();
-  void
-  assemble_system();
-  void
-  solve();
-  void
-  output_results(const unsigned int cycle) const;
-
-  const PoissonParameters<dim> &par;
-
-  Triangulation<dim> triangulation;
-  FE_Q<dim>          fe;
-  DoFHandler<dim>    dof_handler;
-
-  AffineConstraints<double> constraints;
-
-  SparsityPattern      sparsity_pattern;
-  SparseMatrix<double> system_matrix;
-
-  Vector<double> solution;
-  Vector<double> system_rhs;
-};
-
-
-
-template <int dim>
-Poisson<dim>::Poisson(const PoissonParameters<dim> &par)
-  : par(par)
-  , fe(par.fe_degree)
-  , dof_handler(triangulation)
-{}
-
-
-
-template <int dim>
-void
-Poisson<dim>::make_grid()
-{
-  GridGenerator::hyper_cube(triangulation, -1, 1);
-  triangulation.refine_global(par.initial_refinement);
-
-  std::cout << "   Number of active cells: " << triangulation.n_active_cells()
-            << std::endl
-            << "   Total number of cells: " << triangulation.n_cells()
-            << std::endl;
-}
-
-
-template <int dim>
-void
-Poisson<dim>::setup_system()
-{
-  dof_handler.distribute_dofs(fe);
-
-  std::cout << "   Number of degrees of freedom: " << dof_handler.n_dofs()
-            << std::endl;
-
-  constraints.clear();
-  VectorTools::interpolate_boundary_values(dof_handler,
-                                           0,
-                                           par.exact_solution,
-                                           constraints);
-
-  // Create hanging node constraints
-  DoFTools::make_hanging_node_constraints(dof_handler, constraints);
-  constraints.close();
-
-  DynamicSparsityPattern dsp(dof_handler.n_dofs());
-  DoFTools::make_sparsity_pattern(dof_handler, dsp, constraints);
-  sparsity_pattern.copy_from(dsp);
-
-  system_matrix.reinit(sparsity_pattern);
-
-  solution.reinit(dof_handler.n_dofs());
-  system_rhs.reinit(dof_handler.n_dofs());
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::assemble_system()
-{
-  QGauss<dim> quadrature_formula(fe.degree + 1);
-
-  FEValues<dim> fe_values(fe,
-                          quadrature_formula,
-                          update_values | update_gradients |
-                            update_quadrature_points | update_JxW_values);
-
-  const unsigned int dofs_per_cell = fe.n_dofs_per_cell();
-
-  FullMatrix<double> cell_matrix(dofs_per_cell, dofs_per_cell);
-  Vector<double>     cell_rhs(dofs_per_cell);
-
-  std::vector<types::global_dof_index> local_dof_indices(dofs_per_cell);
-
-  for (const auto &cell : dof_handler.active_cell_iterators())
-    {
-      fe_values.reinit(cell);
-      cell_matrix = 0;
-      cell_rhs    = 0;
-
-      for (const unsigned int q_index : fe_values.quadrature_point_indices())
-        for (const unsigned int i : fe_values.dof_indices())
-          {
-            for (const unsigned int j : fe_values.dof_indices())
-              cell_matrix(i, j) +=
-                (fe_values.shape_grad(i, q_index) * // grad phi_i(x_q)
-                 fe_values.shape_grad(j, q_index) * // grad phi_j(x_q)
-                 fe_values.JxW(q_index));           // dx
-
-            const auto &x_q = fe_values.quadrature_point(q_index);
-            cell_rhs(i) += (fe_values.shape_value(i, q_index) * // phi_i(x_q)
-                            par.rhs_function.value(x_q) *       // f(x_q)
-                            fe_values.JxW(q_index));            // dx
-          }
-
-      cell->get_dof_indices(local_dof_indices);
-      constraints.distribute_local_to_global(
-        cell_matrix, cell_rhs, local_dof_indices, system_matrix, system_rhs);
-    }
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::solve()
-{
-  SolverControl            solver_control(1000, 1e-12);
-  SolverCG<Vector<double>> solver(solver_control);
-  solver.solve(system_matrix, solution, system_rhs, PreconditionIdentity());
-  constraints.distribute(solution);
-
-  std::cout << "   " << solver_control.last_step()
-            << " CG iterations needed to obtain convergence." << std::endl;
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::output_results(const unsigned int cycle) const
-{
-  DataOut<dim> data_out;
-
-  data_out.attach_dof_handler(dof_handler);
-  data_out.add_data_vector(solution, "solution");
-
-  data_out.build_patches();
-
-  auto fname =
-    "solution-" + std::to_string(dim) + "d_" + std::to_string(cycle) + ".vtu";
-
-  std::ofstream output(fname);
-  data_out.write_vtu(output);
-
-  static std::vector<std::pair<double, std::string>> times_and_names;
-  times_and_names.push_back({cycle, fname});
-
-  std::ofstream pvd_output("solution-" + std::to_string(dim) + "d.pvd");
-
-  DataOutBase::write_pvd_record(pvd_output,
-
- times_and_names);
-}
-
-
-
-template <int dim>
-void
-Poisson<dim>::run()
-{
-  std::cout << "Solving problem in " << dim << " space dimensions."
-            << std::endl;
-
-  for (unsigned int cycle = 0; cycle < par.n_cycles; ++cycle)
-    {
-      if (cycle == 0)
-        make_grid();
-      else
-        {
-          // estimate error
-          // refine mesh where error is larger
-          for (const auto &cell : triangulation.active_cell_iterators())
-            {
-              if (cell->center().distance(Point<dim>(0.5, 0.5)) < 0.25)
-                cell->set_refine_flag();
-            }
-          triangulation.execute_coarsening_and_refinement();
-        }
-      setup_system();
-      assemble_system();
-      solve();
-      output_results(cycle);
-      par.convergence_table.error_from_exact(dof_handler,
-                                             solution,
-                                             par.exact_solution);
-    }
-  par.convergence_table.output_table(std::cout);
-}
-
-
-
-int
-main()
-{
-  {
-    PoissonParameters<2> par;
-    Poisson<2>           laplace_problem_2d(par);
-    laplace_problem_2d.run();
-  }
-
-  return 0;
-}
+# Lab 6: Poisson with nonhomogeneous Dirichlet data
+
+Solve a family of Poisson problems on $\Omega=(-1,1)^2$:
+
+$$
+-\Delta u=f\quad\text{in }\Omega,\qquad u=g\quad\text{on }\partial\Omega.
+$$
+
+A single smooth function supplies the manufactured solution, the forcing
+$f=-\Delta u$, the boundary data $g=u|_{\partial\Omega}$, and the reference
+for error integration. The mesh is refined uniformly. We use continuous
+`FE_Q<2>(1)` elements, with no hanging nodes.
+
+By the end of the exercises you should be able to change the problem data
+consistently, verify boundary values, measure convergence in $L^2$ and the
+full $H^1$ norm, and inspect a computed field in ParaView.
+
+## 1. Supplied solver and mathematical setting
+
+The starter supplies mesh generation, local and global assembly, symmetric
+Dirichlet elimination, CG, residual diagnostics and VTU output. Complete only
+the three TODOs in
+[`poisson-starter.cc`](../../labs/lab-06/poisson-starter.cc).
+The supplied analytical functions are in
+[`manufactured_functions.h`](../../labs/lab-06/manufactured_functions.h).
+The historical `lab-06.cc` is retained separately; the `lab-06` target now
+builds this starter.
+
+The weak formulation is: find $u\in H^1(\Omega)$ with trace $g$ such that
+
+$$
+\int_\Omega\nabla u\cdot\nabla v=\int_\Omega fv
+\qquad\forall v\in H^1_0(\Omega).
+$$
+
+In the discrete space, prescribe the boundary nodal values of $g$. For free
+indices $I$ and boundary indices $B$, the interior system is
+
+$$
+A_{II}U_I=b_I-A_{IB}U_B,\qquad (U_B)_j=g(a_j).
+$$
+
+Explain why setting boundary entries of the solution alone does not produce
+this system. `MatrixTools::apply_boundary_values` performs the elimination;
+its supplied final argument `true` eliminates columns and preserves symmetry.
+For a smooth nonpolynomial $g$, the finite element trace is its nodal
+interpolant: agreement at boundary nodes does not imply pointwise agreement
+along every boundary edge.
+
+From the repository root, in the course deal.II **9.7.1** environment:
+
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+cmake --build build --target lab-06 --parallel 2
+mkdir -p build/runs/lab-06-affine
+cd build/runs/lab-06-affine
+../../bin/lab-06
 ```
 
-## Using `ParsedConvergenceTable` for Convergence Analysis
+Rebuild from the repository root after each source change. Use separate run
+directories for the three functions: each run replaces its CSV and VTU files.
+The untouched starter runs the homogeneous zero problem and reports a nonzero
+boundary error against the intended affine data. It writes only the CSV
+header until TODO 3 is completed. A small residual alone therefore does not
+validate the intended boundary value problem.
 
-The `ParsedConvergenceTable` class in deal.II simplifies the creation and management of convergence tables. This class reads options for generating convergence tables from a parameter file and provides methods to compute errors using reference exact solutions, differences between numerical solutions, or custom error computations via `std::function` objects.
+## 2. Exercise 1: An affine solution with nonzero boundary data
 
-### Overview
+Start with the supplied `Lab06::Affine`:
 
-Here is a brief overview of the main features and usage of `ParsedConvergenceTable`:
+$$
+u(x,y)=1+x+y,\qquad f=0,\qquad g=1+x+y.
+$$
 
-1. **Adding Parameters:**
-   - The class adds necessary parameters to a `ParameterHandler` object, allowing configuration via a parameter file.
+1. Compute $\nabla u$ and $\Delta u$ by hand. Identify values of $g$ at the four
+   corners. Predict whether this function belongs to the discrete space.
+2. Complete TODO 1: evaluate minus the Laplacian of `exact` at the physical
+   quadrature point. The API is `Function::laplacian(point)`; the selected
+   derived function must implement it. The base class does not infer
+   derivatives from `value()`.
+3. Complete TODO 2: pass the **same `exact` object** to
+   `VectorTools::interpolate_boundary_values` in place of `ZeroFunction`.
+   Keep the supplied elimination and solver.
+4. Run at refinement 2: check **16 cells and 25 DoFs**, a small residual and a
+   maximum boundary error below $10^{-12}$. Open `solution-2.vtu` and verify
+   the affine profile. Once TODO 3 is complete, both error norms should be
+   below $10^{-11}$.
 
-2. **Computing Errors:**
-   - Methods like `error_from_exact()` and `difference()` can be used to compute various norms of the error.
+This is a patch test: affine functions belong to $Q_1$, and the forcing and
+stiffness integrals here are integrated exactly. Roundoff and solver tolerance
+limit the measured error. A convergence slope is not meaningful for this case.
 
-3. **Outputting the Table:**
-   - The final convergence table can be outputted to a stream or a file.
+## 3. Exercise 2: A manufactured solution and convergence
 
-### Example Usage
+Replace the declaration of `exact` with `Functions::ExpFunction<2> exact`.
+This function implements
 
-The following example demonstrates a typical usage of `ParsedConvergenceTable`:
+$$
+u(x,y)=e^{x+y},\qquad\nabla u=(u,u),\qquad\Delta u=2u.
+$$
 
-```cpp
-ParsedConvergenceTable table;
-ParameterHandler prm;
-table.add_parameters(prm);
+First derive $f$ and $g$ by hand. Changing the function declaration must now
+change forcing, boundary values and error reference together. Keep $p=1$.
 
-for (unsigned int i = 0; i < n_cycles; ++i)
-{
-  // ... perform computations for the i-th cycle
-  table.error_from_exact(dof_handler, solution, exact_solution);
-}
-table.output_table(std::cout);
+Complete TODO 3 using the deal.II error routines introduced in Laboratory 5:
+
+- Allocate a cellwise error vector with `mesh.n_active_cells()` entries.
+- Call `VectorTools::integrate_difference` with `dofs`, `solution`, `exact`,
+  the cellwise vector, `QGauss<2>(fe.degree+3)` and `VectorTools::L2_norm`.
+- Reduce with `VectorTools::compute_global_error`, using the **same norm**.
+- Repeat for `VectorTools::H1_norm`. Append `degree,h,l2,h1` to `errors.csv`.
+
+Here $h=2/2^r$ is the cell side length after $r$ global refinements; the cell
+diameter is $\sqrt2h$. The full norm is
+
+$$
+\|e\|_1=\left(\|e\|_0^2+|e|_1^2\right)^{1/2},
+\qquad |e|_1^2=\int_\Omega|\nabla e|^2.
+$$
+
+`H1_norm` includes both terms. `H1_seminorm` includes only the gradient term.
+These errors compare the **Galerkin solution** $u_h$ with $u$.
+
+Run $r=2,\ldots,6$. There are $4^r$ cells and $(2^r+1)^2$ DoFs. For each pair
+of successive meshes compute
+
+$$
+q_r=\frac{\log(E_{r-1}/E_r)}{\log(h_{r-1}/h_r)}
+    =\log_2(E_{r-1}/E_r).
+$$
+
+For this smooth solution on uniform square meshes, nodally interpolated
+Dirichlet data and fixed degree $p=1$, expect $\|u-u_h\|_0=O(h^2)$ and
+$\|u-u_h\|_1=O(h)$. The constants are independent of $h$; the $L^2$ estimate
+uses elliptic regularity on the convex square. The boundary interpolation
+must also be accounted for in the approximation estimate.
+
+The assembly uses four Gauss points per direction. Repeat the finest case
+with five points in both assembly and error integration. Check that both
+errors change by less than $10^{-5}$ relatively. Keep the algebraic residual
+small compared with the measured discretization errors.
+
+From the run directory, generate the plot (NumPy and Matplotlib required):
+
+```bash
+python ../../../labs/lab-06/plot_results.py errors.csv --output convergence.png
 ```
 
-In this example:
+The panels show errors against $h$ with slope-2 and slope-1 reference lines.
+Read slopes with respect to the horizontal variable: in two dimensions
+$N\simeq h^{-2}$, so plotting against DoFs would give exponents $-1$ and
+$-1/2$ instead.
 
-- A `ParsedConvergenceTable` object is created.
-- Parameters are added to a `ParameterHandler`.
-- Errors are computed for each cycle using `error_from_exact()`.
-- The convergence table is outputted to the console.
+### Computed reference results
 
-### Features
+The figures below are generated from the reference test's computed solution
+and errors. They provide graphical comparisons; the exercise implementation
+is not displayed here. The test checks the affine patch, residuals, boundary
+values, quadrature sensitivity and finest-grid rates (within $0.12$ of 2 and 1).
 
-#### Parameter Configuration
+```{figure} ../../notes/assets/generated/lab-06/exponential-solution.png
+:alt: Computed exponential Poisson solution as a surface and a contour view.
 
-By calling `add_parameters()` and passing a `ParameterHandler` object, several options are defined, which can be modified at runtime through a parameter file:
-
-```plaintext
-set Enable computation of the errors = true
-set Error file name                  =
-set Error precision                  = 3
-set Exponent for p-norms             = 2
-set Extra columns                    = dofs, cells
-set List of error norms to compute   = Linfty_norm, L2_norm, H1_norm
-set Rate key                         = dofs
-set Rate mode                        = reduction_rate_log2
+Computed $Q_1$ solution at $r=6$. The right panel displays nodal values and
+contours; the VTU file contains the finite element field.
 ```
 
-These parameters control the computation and output of the convergence table.
+```{figure} ../../notes/assets/generated/lab-06/exponential-convergence.png
+:alt: L2 and full H1 errors for the exponential manufactured solution.
 
-#### Error Computation
+Errors computed with deal.II and reference slopes 2 in $L^2$ and 1 in full $H^1$.
+```
 
-Whenever `error_from_exact()` or `difference()` is called, the class:
+## 4. Exercise 3: Two peaks in ParaView
 
-- Inspects its parameters.
-- Computes all specified norms.
-- Computes any extra columns defined via `add_extra_column()`.
-- Writes one row of the convergence table.
+Use `Lab06::TwoPeaks exact`. Its value, gradient and Laplacian are supplied:
 
-#### Output
+$$
+u(x,y)=1+0.2x-0.1y+
+2e^{-12((x+0.35)^2+(y+0.2)^2)}+
+1.2e^{-25((x-0.4)^2+(y-0.35)^2)}.
+$$
 
-The convergence table can be outputted using `output_table()`:
+For a term $w=Ae^{-\alpha|x-c|^2}$ in two dimensions,
 
-- To a stream (e.g., `std::cout`).
-- To a file specified in the parameter file.
+$$
+\nabla w=-2\alpha(x-c)w,\qquad
+\Delta w=(4\alpha^2|x-c|^2-4\alpha)w.
+$$
 
-## Using AffineConstraints for Boundary Conditions and Hanging Nodes
+The affine part ensures visibly nonzero boundary data. The narrower peak
+requires finer meshes before the asymptotic regime becomes clear.
 
-In deal.II, boundary conditions and constraints for hanging nodes can be handled more flexibly using `AffineConstraints<double>` instead of `MatrixTools::apply_boundary_values`. The `AffineConstraints` class allows you to manage multiple types of constraints in a unified way.
+1. Run at refinements 2 and 5. Open `solution-5.vtu` in ParaView, click
+   **Apply**, and color by `solution`. Use **Surface With Edges** to inspect
+   the mesh, then **Surface** to inspect the field.
+2. Add **Warp By Scalar**, select `solution`, and use scale factor $0.3$.
+   Rotate the view to distinguish the two peaks. Add a **Contour** filter
+   on the original data if desired.
+3. Compare `solution` with `exact_at_nodes`, using the same color range.
+   The latter is the nodal interpolant of the exact function, so agreement
+   of these displays is a visual check. The error norms integrate against
+   the actual analytical function and give a quantitative check.
 
-### Setting Up AffineConstraints
+Keep screenshots of the surface and warped view. Compare the peak locations
+and relative heights with the supplied function. Use your error table to
+explain what changes under refinement.
 
-To replace `MatrixTools::apply_boundary_values` with `AffineConstraints<double>`, follow these steps:
+```{figure} ../../notes/assets/generated/lab-06/peaks-solution.png
+:alt: Computed Poisson solution with two unequal peaks and nonzero boundary data.
 
-1. **Clear and Initialize Constraints:**
-   Clear any existing constraints and set up the boundary values and hanging nodes constraints using `AffineConstraints<double>`.
+Computed two-peak solution, generated from the numerical test at $r=6$.
+```
 
-2. **Distribute Local to Global:**
-   Use the `distribute_local_to_global` method of `AffineConstraints<double>` during the assembly of the system matrix and right-hand side vector.
+```{figure} ../../notes/assets/generated/lab-06/peaks-convergence.png
+:alt: L2 and full H1 error convergence for the two-peak problem.
 
-3. **Distribute Solution:**
-   After solving the linear system, use `AffineConstraints<double>` to apply the constraints to the solution vector.
+Uniform-refinement errors for the two-peak solution. The finest meshes
+resolve the narrower peak and approach the predicted orders.
+```
 
-### Comparison with MatrixTools::apply_boundary_values
+## 5. Deliverables and optional extension
 
-Using `AffineConstraints` has several advantages over `MatrixTools::apply_boundary_values`:
+Submit the completed starter, the exponential error table and plot, and two
+ParaView screenshots of the two-peak solution. Report the affine patch errors,
+the finest observed rates and the quadrature comparison. Explain how one
+function supplies all three roles: forcing, boundary data and exact reference.
 
-- **Flexibility:** `AffineConstraints` can handle multiple types of constraints (e.g., boundary values, hanging nodes) in a unified manner.
-- **Simplicity:** The constraints are applied automatically during the assembly and solution phases, reducing the need for additional function calls.
-- **Efficiency:** The constraints are incorporated directly into the system matrix and right-hand side vector, during the assembly time, eliminating the cost of applying algebraic constraints as a post-processing steps of linear algebra objects.
-
-## Exercises
-
-### Exercise 1: Understanding the PoissonParameters Class
-
-1. **Parameter File:**
-   - Create a parameter file named `poisson_2d.prm` with the following contents:
-
-     ```plaintext
-     subsection Poisson parameters
-       set Finite element degree = 1
-       set Initial refinement = 3
-       set Number of cycles = 5
-       set Exact solution expression = cos(pi*x)*cos(pi*y)
-       set Right hand side expression = 2*pi*pi*cos(pi*x)*cos(pi*y)
-     end
-
-     subsection Convergence table
-       set Enable computation of the errors = true
-       set Error file name                  = errors.txt
-       set Error precision                  = 3
-       set Exponent for p-norms             = 2
-       set Extra columns                    = dofs, cells
-       set List of error norms to compute   = Linfty_norm, L2_norm, H1_norm
-       set Rate key                         = dofs
-       set Rate mode                        = reduction_rate_log2
-     end
-     ```
-
-   - Ensure this file is in the same directory as your executable.
-
-2. **Modify Parameters:**
-   - Change the `Finite element degree` and `Initial refinement` parameters in the parameter file and observe how they affect the solution and convergence.
-
-### Exercise 2: Refining Meshes
-
-1. **Local Refinement:**
-   - Modify the parameter file to add parameters controlling local refinement:
-
-     ```plaintext
-     subsection Local refinement
-       set Refinement fraction = 0.3
-       set Coarsening fraction = 0.0
-       set Minimum grid level = 3
-       set Maximum grid level = 7
-     end
-     ```
-
-   - Implement local mesh refinement using Kelly error estimator, replace the current placeholder for mesh refinement with
-
-     ```cpp
-     for (unsigned int cycle = 0; cycle < par.n_cycles; ++cycle)
-     {
-       if (cycle == 0)
-         make_grid();
-       else
-       {
-         Vector<float> estimated_error_per_cell(triangulation.n_active_cells());
-         KellyErrorEstimator<dim>::estimate(dof_handler,
-                                            QGauss<dim-1>(fe.degree + 1),
-                                            {},
-                                            solution,
-                                            estimated_error_per_cell);
-
-         GridRefinement::refine_and_coarsen_fixed_fraction(triangulation,
-                                                           estimated_error_per_cell,
-                                                           0.3, // Refinement fraction from parameter file
-                                                           0.0); // Coarsening fraction from parameter file
-
-         triangulation.execute_coarsening_and_refinement();
-       }
-       ...
-     ```
-
-### Exercise 3: Convergence Rate Analysis - Local Refinement vs. Global Refinement
-
-1. Create two parameter files, one for global refinement (`global_refinement.prm`, i.e., setting refinement fraction to `1.0`) and one for local refinement (`local_refinement.prm`), choosing the coefficients such that the total number of degrees of freedom in the final step is the same for the two cases (i.e., more cycles in the local refinement case, tuning the top fraction parameter)
-
-2. Analyse the two error tables. What can you say about the final error in the two cases? Which one works better?
-
-3. Analyse the convergence rate in the two cases w.r.t. the number of degrees of freedom. What powers do you see for the error decay in the two cases, in L2 and H1?
-
-4. Do the same for degree 2. What powers do you see now?
+As an optional extension, repeat the exponential experiment with degree 2.
+Expect orders 3 and 2; adapt the plot's reference slopes accordingly. Keep
+this extension separate from the required degree-1 experiments.

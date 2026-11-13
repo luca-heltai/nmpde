@@ -10,6 +10,8 @@ KEYWORD = "[regenerate figures]"
 ASSETS = Path(__file__).resolve().parents[1] / "notes/assets"
 PLOT_NAMES = ("pacman-geometry.svg", "convergence-h1.svg", "convergence-h1.png",
               "convergence-l2.svg", "convergence-l2.png", "tables.md", "fitted-rates.csv")
+LAB06_PLOT_NAMES = tuple(f"{case}-{kind}.png" for case in ("exponential", "peaks")
+                         for kind in ("solution", "convergence"))
 PARAVIEW_NAMES = ("pacman-solutions.png", "pacman-cell-errors.png")
 
 
@@ -31,6 +33,11 @@ def required_files(assets=ASSETS):
         files += [folder / name for name in
                   ("convergence.csv", "metadata.txt", "solution.pvd")]
         files += [folder / f"solution-{cycle}.vtu" for cycle in range(6)]
+    files += [generated / "lab-06" / name for name in LAB06_PLOT_NAMES]
+    for case in ("exponential", "peaks"):
+        files += [generated / "lab-06" / f"{case}-{suffix}.csv"
+                  for suffix in ("errors", "nodes")]
+        files += [generated / "lab-06" / f"{case}-{r}.vtu" for r in range(2, 7)]
     return files
 
 
@@ -91,7 +98,9 @@ def main():
     needs = {
         "regenerate": force,
         "missing": missing,
-        "plots": force or any(needs_generation(generated / p) for p in PLOT_NAMES),
+        "plots": force or any(needs_generation(generated / p) for p in PLOT_NAMES)
+                 or any(needs_generation(ASSETS / "generated/lab-06" / p)
+                        for p in LAB06_PLOT_NAMES),
         "paraview": force or any(needs_generation(ASSETS / "lecture-06" / p) for p in PARAVIEW_NAMES),
     }
     output = "".join(f"{key}={int(value)}\n" for key, value in needs.items())
