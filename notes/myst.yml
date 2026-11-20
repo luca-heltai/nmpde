@@ -31,6 +31,7 @@ project:
         - file: laboratories/lab-04.md
         - file: laboratories/lab-05.md
         - file: laboratories/lab-06.md
+        - file: laboratories/lab-07-adaptivity.md
     - file: projects.md
 
 site:

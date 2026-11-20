@@ -22,3 +22,6 @@ The final step introduces deal.II error integration and the full $H^1$ norm.
 uses one manufactured solution to define the forcing and boundary values,
 measures convergence in $L^2$ and the full $H^1$ norm, and visualizes a
 two-peak solution in ParaView.
+[Laboratory 7 — Hanging nodes and cell-residual marking](lab-07-adaptivity.md)
+uses affine constraints to impose Dirichlet values and maintain continuity on
+locally refined meshes, then compares two marking rules using the cell residual.

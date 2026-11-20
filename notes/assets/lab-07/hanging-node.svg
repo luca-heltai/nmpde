@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 340" role="img" aria-labelledby="title desc">
+  <title id="title">A hanging node and its trace constraint</title>
+  <desc id="desc">A coarse square meets two fine squares along an edge. The midpoint M is a vertex on the fine side. A plot compares the coarse linear trace with a fine piecewise linear trace that disagrees at M.</desc>
+  <defs>
+    <style>
+      text { font-family: sans-serif; fill: #162b3c; font-size: 18px; }
+      .heading { font-size: 22px; font-weight: 650; }
+      .axis-label { font-size: 16px; }
+    </style>
+  </defs>
+  <rect width="900" height="340" fill="#fff"/>
+  <text x="48" y="38" class="heading">The coarse–fine interface</text>
+  <text x="438" y="38" class="heading">Traces along the interface</text>
+
+  <g stroke="#52677a" stroke-width="2">
+    <rect x="60" y="74" width="172" height="172" fill="#e8f2fa"/>
+    <rect x="232" y="74" width="86" height="86" fill="#fcf0e6"/>
+    <rect x="232" y="160" width="86" height="86" fill="#fcf0e6"/>
+  </g>
+  <path d="M232 74V246" fill="none" stroke="#245e85" stroke-width="4"/>
+  <g fill="#245e85">
+    <circle cx="232" cy="74" r="5"/>
+    <circle cx="232" cy="246" r="5"/>
+  </g>
+  <circle cx="232" cy="160" r="7" fill="#a3451b" stroke="#fff" stroke-width="2"/>
+  <text x="221" y="65">A</text>
+  <text x="244" y="151">M</text>
+  <text x="221" y="270">B</text>
+  <text x="114" y="165">coarse</text>
+  <text x="263" y="122">fine</text>
+  <text x="263" y="207">fine</text>
+
+  <path d="M476 72V246H848" fill="none" stroke="#52677a" stroke-width="2"/>
+  <text x="438" y="68" class="axis-label">value</text>
+  <path d="M656 82V246" fill="none" stroke="#9aabba" stroke-dasharray="5 5"/>
+  <path d="M476 223L836 120" fill="none" stroke="#245e85" stroke-width="4"/>
+  <path d="M476 223L656 89L836 120" fill="none" stroke="#a3451b" stroke-width="4"/>
+  <circle cx="656" cy="171.5" r="5" fill="#245e85"/>
+  <circle cx="656" cy="89" r="5" fill="#a3451b"/>
+  <text x="470" y="270">A</text>
+  <text x="648" y="270">M</text>
+  <text x="830" y="270">B</text>
+  <path d="M455 309H485" stroke="#245e85" stroke-width="4"/>
+  <text x="493" y="315" class="axis-label">coarse trace</text>
+  <path d="M627 309H657" stroke="#a3451b" stroke-width="4"/>
+  <text x="666" y="315" class="axis-label">fine trace before constraint</text>
+</svg>
