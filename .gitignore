@@ -67,3 +67,6 @@
 /labs/lab-01/*.vtk
 /labs/convergence_graphs/*.pdf
 /labs/convergence_graphs/*.tex
+
+# Static teaching diagrams for Lecture 8
+!/notes/assets/lecture-08/*.svg

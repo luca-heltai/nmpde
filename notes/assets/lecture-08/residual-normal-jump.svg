@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="648pt" height="360pt" viewBox="0 0 648 360" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib v3.9.0, https://matplotlib.org/</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 360
+L 648 360
+L 648 0
+L 0 0
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 236.934783 232.278261
+L 427.265217 232.278261
+L 332.1 77.634783
+z
+" clip-path="url(#p3ec0ef824f)" style="fill: #e1edf7; stroke: #84909d; stroke-width: 1.5; stroke-linejoin: miter"/>
+   </g>
+   <g id="patch_3">
+    <path d="M 236.934783 232.278261
+L 427.265217 232.278261
+L 332.1 291.756522
+z
+" clip-path="url(#p3ec0ef824f)" style="fill: #f9ead8; stroke: #84909d; stroke-width: 1.5; stroke-linejoin: miter"/>
+   </g>
+   <g id="line2d_1">
+    <path d="M 236.934783 232.278261
+L 427.265217 232.278261
+" clip-path="url(#p3ec0ef824f)" style="fill: none; stroke: #007c83; stroke-width: 4; stroke-linecap: square"/>
+   </g>
+   <g id="text_1">
+    <!-- $T^+$ -->
+    <g transform="translate(296.413043 160.904348)">
+     <text>
+      <tspan style="font: oblique 19px 'DejaVu Sans'" x="0" y="-0.39218750000000213">T</tspan>
+      <tspan style="font: 13.3px 'DejaVu Sans'" x="15.529124" y="-7.665625000000002">+</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_2">
+    <!-- $T^-$ -->
+    <g transform="translate(302.36087 262.017391)">
+     <text>
+      <tspan style="font: oblique 19px 'DejaVu Sans'" x="0" y="-0.15625">T</tspan>
+      <tspan style="font: 13.3px 'DejaVu Sans'" x="15.529124" y="-7.429687499999999">−</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_3">
+    <!-- $F$ -->
+    <g style="fill: #007c83" transform="translate(417.748696 222.761739)">
+     <text>
+      <tspan style="font: oblique 18px 'DejaVu Sans'" x="0" y="-0.875">F</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="patch_4">
+    <path d="M 308.308696 234.281005
+Q 308.308696 251.311162 308.308696 266.10525
+" style="fill: none; stroke: #713da6; stroke-width: 2; stroke-linecap: round"/>
+    <path d="M 310.508696 261.70525
+L 308.308696 266.10525
+L 306.108696 261.70525
+" style="fill: none; stroke: #713da6; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="text_4">
+    <!-- $n^+$ -->
+    <g style="fill: #713da6" transform="translate(314.256522 251.311304)">
+     <text>
+      <tspan style="font: oblique 16px 'DejaVu Sans'" x="0" y="-0.8531250000000004">n</tspan>
+      <tspan style="font: 11.2px 'DejaVu Sans'" x="13.067865" y="-6.978125">+</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="patch_5">
+    <path d="M 355.891304 230.275516
+Q 355.891304 213.24536 355.891304 198.451272
+" style="fill: none; stroke: #713da6; stroke-width: 2; stroke-linecap: round"/>
+    <path d="M 353.691304 202.851272
+L 355.891304 198.451272
+L 358.091304 202.851272
+" style="fill: none; stroke: #713da6; stroke-width: 2; stroke-linecap: round"/>
+   </g>
+   <g id="text_5">
+    <!-- $n^-$ -->
+    <g style="fill: #713da6" transform="translate(361.83913 213.245217)">
+     <text>
+      <tspan style="font: oblique 16px 'DejaVu Sans'" x="0" y="-0.8937500000000007">n</tspan>
+      <tspan style="font: 11.2px 'DejaVu Sans'" x="13.067865" y="-7.018750000000001">−</tspan>
+     </text>
+    </g>
+   </g>
+   <g id="text_6">
+    <text style="font: 16px 'DejaVu Sans'; text-anchor: middle" x="332.1" y="21" transform="rotate(-0 332.1 21)">The normal jump adds the two outward fluxes</text>
+   </g>
+  </g>
+  <g id="text_7">
+   <!-- $j_F=\nabla u_h^+\!\cdot n^+ + \nabla u_h^-\!\cdot n^-$;  the residual contains $-\int_F j_F w$. -->
+   <g transform="translate(118.125 347.4)">
+    <text>
+     <tspan style="font: oblique 15px 'DejaVu Sans'" x="0 39.064453 70.717969 122.669746 154.323262 383.969531 394.586719" y="-0.9375">jununjw</tspan>
+     <tspan style="font: oblique 10.5px 'DejaVu Sans'" x="4.16748 48.571289 132.176582 377.929981 388.137012" y="1.5234375 3.1640625 3.1640625 6.84375 1.5234375">FhhFF</tspan>
+     <tspan style="font: 15px 'DejaVu Sans'" x="13.539551 29.030273 63.027539 97.144844 112.635567 146.632832 177.827774 182.881485 187.649551 192.417617 198.298965 207.805801 217.034317 221.802383 227.969375 237.197891 245.012832 249.180313 258.701797 268.208633 277.400528 281.568008 286.336074 294.583145 303.760391 313.267227 319.148574 328.340469 332.507949 342.014785 349.829727 354.597793 406.854785" y="-0.9375">=∇⋅+∇⋅;  the residual contains −.</tspan>
+     <tspan style="font: 10.5px 'DejaVu Sans'" x="51.286865 82.968818 134.892158 166.574112" y="-6.6843749999999975 -6.6796875 -6.684374999999999 -6.6796875">++−−</tspan>
+     <tspan style="font: 15px 'DejaVu Sans Display'" x="367.166153" y="-0.9375">∫</tspan>
+    </text>
+   </g>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p3ec0ef824f">
+   <rect x="201.247826" y="36" width="261.704348" height="273.6"/>
+  </clipPath>
+ </defs>
+</svg>
