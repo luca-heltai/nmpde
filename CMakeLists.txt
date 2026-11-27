@@ -26,16 +26,8 @@ set(NMPDE_DEALII_LAB_TARGETS
   lab-04
   lab-05
   lab-06
-  lab-06b
-  lab-06c
-  lab-06d
-  lab-06e
   lab-07
-  lab-07-adaptivity
   lab-08
-  lab-08-faces
-  lab-09
-  lab-10
 )
 
 if(NMPDE_BUILD_LABS)
@@ -49,12 +41,8 @@ if(NMPDE_BUILD_LABS AND NMPDE_BUILD_DEALII_LABS)
       add_executable(${lab} "labs/lab-04/step-3-starter.cc")
     elseif(lab STREQUAL "lab-05")
       add_executable(${lab} "labs/lab-05/interpolation-starter.cc")
-    elseif(lab STREQUAL "lab-06")
-      add_executable(${lab} "labs/lab-06/poisson-starter.cc")
-    elseif(lab STREQUAL "lab-07-adaptivity")
-      add_executable(${lab} "labs/lab-07-adaptivity/poisson-starter.cc")
-    elseif(lab STREQUAL "lab-08-faces")
-      add_executable(${lab} "labs/lab-08-faces/poisson-starter.cc")
+    elseif(lab MATCHES "^lab-0[678]$")
+      add_executable(${lab} "labs/${lab}/poisson-starter.cc")
     else()
       add_executable(${lab} "labs/${lab}/${lab}.cc")
     endif()

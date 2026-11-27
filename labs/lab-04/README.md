@@ -26,6 +26,4 @@ After the TODOs are complete, it also writes `solution.vtu`. Run each mesh in
 a separate directory to retain its output. The exercise checklists give the
 expected counts, invariants and tolerances.
 
-The root target `lab-04` now builds `step-3-starter.cc`. The historical
-interpolation program remains available, unchanged, as `lab-04.cc`;
-it is separate from this laboratory's exercises.
+The root target `lab-04` builds `step-3-starter.cc`.

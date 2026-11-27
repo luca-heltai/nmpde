@@ -479,7 +479,7 @@ main(int argc, char **argv)
   if (argc != 2)
     {
       std::cerr
-        << "Usage: lab-08-faces path/to/poisson.prm | --conforming | --subfaces\n";
+        << "Usage: lab-08 path/to/poisson.prm | --conforming | --subfaces\n";
       return 1;
     }
 

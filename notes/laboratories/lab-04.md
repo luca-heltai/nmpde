@@ -49,8 +49,7 @@ cd build/runs/lab-04-r1
 ../../bin/lab-04 1 | tee transcript.txt
 ```
 
-The target builds `labs/lab-04/step-3-starter.cc`. The historical interpolation
-source `labs/lab-04/lab-04.cc` is retained separately. Edit the starter to complete
+The target builds `labs/lab-04/step-3-starter.cc`. Edit the starter to complete
 the exercises and rebuild after each stage.
 
 The optional command-line argument is the number $r$ of global refinements,

@@ -54,7 +54,7 @@
 /slides_master/
 /student_projects/
 /scratch/
-/labs/temp/
+/labs/old_labs/temp/
 /CALENDAR.md
 /CALENDAR-aggiornato.md
 /courseid_696_participants.csv
@@ -65,8 +65,9 @@
 /output/
 /labs/lab-01/lab-01
 /labs/lab-01/*.vtk
-/labs/convergence_graphs/*.pdf
-/labs/convergence_graphs/*.tex
+/labs/old_labs/convergence_graphs/*.pdf
+/labs/old_labs/convergence_graphs/*.tex
+!/labs/old_labs/convergence_graphs/graph.tex
 
 # Static teaching diagrams for Lecture 8
 !/notes/assets/lecture-08/*.svg

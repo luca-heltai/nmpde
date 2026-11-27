@@ -56,7 +56,8 @@ dei laboratori, genera le figure SVG usate nelle lecture e nei laboratori.
 ## Struttura
 
 - `notes/`: libro web e contenuti pubblicati;
-- `labs/`: README e sorgenti C++ dei laboratori;
+- `labs/`: README e sorgenti C++ dei laboratori dell'anno corrente, numerati in ordine;
+- `labs/old_labs/`: materiale degli anni precedenti;
 - `tests/`: testsuite GTest e generatori di figure;
 - `.devcontainer/`: ambiente riproducibile deal.II;
 - `.github/workflows/deploy.yaml`: CI, build e deploy GitHub Pages.
@@ -113,8 +114,8 @@ presenti conservano contenuto e data di modifica.
 
 ## Laboratorio 6: Poisson con Dirichlet non omogeneo
 
-Il target `lab-06` compila `labs/lab-06/poisson-starter.cc`; il sorgente storico
-`lab-06.cc` è conservato. I test `nmpde_lab06_tests` calcolano soluzioni
+Il target `lab-06` compila `labs/lab-06/poisson-starter.cc`. I test
+`nmpde_lab06_tests` calcolano soluzioni
 manufatte, errori deal.II in L2 e H1 completo e dati per le figure:
 
 ```bash

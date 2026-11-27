@@ -190,7 +190,7 @@ main(int argc, char **argv)
 {
   if (argc != 2)
     {
-      std::cerr << "Usage: lab-07-adaptivity path/to/poisson.prm\n";
+      std::cerr << "Usage: lab-07 path/to/poisson.prm\n";
       return 1;
     }
 

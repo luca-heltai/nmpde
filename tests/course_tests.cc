@@ -50,16 +50,21 @@ namespace
 
 TEST(CourseFiles, LaboratorySourcesArePresent)
 {
-  const std::vector<std::string> labs = {
-    "lab-01", "lab-02", "lab-03", "lab-04", "lab-05", "lab-06",
-    "lab-06b", "lab-06c", "lab-06d", "lab-06e", "lab-07", "lab-08",
-    "lab-09", "lab-10"};
+  const std::vector<fs::path> sources = {
+    "lab-01/lab-01.cc",
+    "lab-02/lab-02.cc",
+    "lab-03/lab-03.cc",
+    "lab-04/step-3-starter.cc",
+    "lab-05/interpolation-starter.cc",
+    "lab-06/poisson-starter.cc",
+    "lab-07/poisson-starter.cc",
+    "lab-08/poisson-starter.cc"};
 
-  for (const auto &lab : labs)
+  for (const auto &source : sources)
     {
-      EXPECT_TRUE(fs::is_regular_file(source_root / "labs" / lab /
-                                      (lab + ".cc")))
-        << "Missing C++ source for " << lab;
+      EXPECT_TRUE(fs::is_regular_file(source_root / "labs" / source))
+        << "Missing C++ source " << source;
+      const auto lab = source.parent_path();
       EXPECT_TRUE(fs::is_regular_file(source_root / "labs" / lab /
                                       "README.md"))
         << "Missing README for " << lab;

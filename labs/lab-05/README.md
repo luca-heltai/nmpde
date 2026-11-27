@@ -51,8 +51,7 @@ rate when only the polynomial degree is increased on a fixed mesh.
 
 The root target `lab-05` builds
 [`interpolation-starter.cc`](../../labs/lab-05/interpolation-starter.cc).
-The historical Poisson implementation remains in `lab-05.cc` and is not the
-source of this target. Use the course deal.II **9.7.1** environment.
+Use the course deal.II **9.7.1** environment.
 
 From the repository root:
 

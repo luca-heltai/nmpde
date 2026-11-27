@@ -64,7 +64,7 @@ modifying it. Local commits and a personal repository are optional; neither
 is a contribution to the lecturer's repository.
 
 The official [Git documentation on creating a repository](https://git-scm.com/book/en/v2/Git-Basics-Getting-a-Git-Repository)
-and the [VS Code source-control overview](https://code.visualstudio.com/docs/sourcecontrol/overview)
+and the [VS Code source-control overview](https://github.com/microsoft/vscode-docs/blob/main/docs/sourcecontrol/overview.md)
 are useful references.
 
 ## 2. Opening the project in VS Code
@@ -93,7 +93,7 @@ The most useful areas for this course are:
 
 The VS Code interface: Explorer, editor, views, status bar, and integrated
 terminal. Image from the official
-[VS Code user-interface tutorial](https://code.visualstudio.com/docs/editing/getting-started/userinterface).
+[VS Code user-interface tutorial](https://github.com/microsoft/vscode-docs/blob/main/docs/editing/getting-started/userinterface.md).
 ```
 
 For the first laboratory, use VS Code as an editor and as a convenient window

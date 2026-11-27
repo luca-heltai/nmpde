@@ -23,8 +23,7 @@ the three TODOs in
 [`poisson-starter.cc`](../../labs/lab-06/poisson-starter.cc).
 The supplied analytical functions are in
 [`manufactured_functions.h`](../../labs/lab-06/manufactured_functions.h).
-The historical `lab-06.cc` is retained separately; the `lab-06` target now
-builds this starter.
+The `lab-06` target builds this starter.
 
 The weak formulation is: find $u\in H^1(\Omega)$ with trace $g$ such that
 
