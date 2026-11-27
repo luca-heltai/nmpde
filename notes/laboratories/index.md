@@ -25,3 +25,6 @@ two-peak solution in ParaView.
 [Laboratory 7 — Hanging nodes and cell-residual marking](lab-07-adaptivity.md)
 uses affine constraints to impose Dirichlet values and maintain continuity on
 locally refined meshes, then compares two marking rules using the cell residual.
+[Laboratory 8 — Boundary integrals, flux jumps, and residual estimation](lab-08-faces.md)
+extends the adaptive Poisson solver with Neumann data, integrates jumps across
+faces and subfaces, and assembles the residual estimator with `MeshWorker::mesh_loop`.

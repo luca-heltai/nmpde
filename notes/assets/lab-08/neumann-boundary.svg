@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 368" role="img" aria-labelledby="title desc">
+  <title id="title">Dirichlet and Neumann boundaries on the unit square</title>
+  <desc id="desc">Three solid blue sides carry Dirichlet data. The dashed orange right side at x equals 1 carries Neumann data with outward normal pointing right.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto" markerUnits="userSpaceOnUse">
+      <path fill="#974600" d="M0 0l9 4.5L0 9z"/>
+    </marker>
+  </defs>
+  <rect width="760" height="368" rx="12" fill="#fff"/>
+  <g font-family="Arial, sans-serif" fill="#15293d">
+    <text x="48" y="42" font-size="24" font-weight="700">Boundary ids on the unit square</text>
+    <rect x="92" y="82" width="224" height="224" fill="#f4f8fb"/>
+    <path d="M316 82H92v224h224" fill="none" stroke="#185b87" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M316 82v224" fill="none" stroke="#974600" stroke-width="6" stroke-dasharray="12 6"/>
+    <g font-size="17" text-anchor="middle">
+      <text x="204" y="113" fill="#185b87">id 0</text>
+      <text x="122" y="200" fill="#185b87">id 0</text>
+      <text x="204" y="284" fill="#185b87">id 0</text>
+      <text x="281" y="200" fill="#974600">id 1</text>
+      <text x="204" y="241" font-size="19">Ω</text>
+      <text x="92" y="334" font-size="16">(0, 0)</text>
+      <text x="316" y="334" font-size="16">(1, 0)</text>
+    </g>
+    <path d="M316 227h58" stroke="#974600" stroke-width="2.5" marker-end="url(#arrow)"/>
+    <text x="344" y="252" text-anchor="middle" fill="#974600" font-size="17">n</text>
+    <path d="M423 119h43" stroke="#185b87" stroke-width="5"/>
+    <text x="484" y="126" font-size="20" font-weight="700">Dirichlet · id 0</text>
+    <text x="484" y="155" font-size="17">Prescribe the value of u</text>
+    <path d="M423 211h43" stroke="#974600" stroke-width="5" stroke-dasharray="10 5"/>
+    <text x="484" y="218" font-size="20" font-weight="700">Neumann · id 1</text>
+    <text x="484" y="247" font-size="17">Prescribe the outward flux</text>
+    <text x="484" y="273" font-size="17">Right side, x = 1</text>
+  </g>
+</svg>

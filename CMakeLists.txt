@@ -33,6 +33,7 @@ set(NMPDE_DEALII_LAB_TARGETS
   lab-07
   lab-07-adaptivity
   lab-08
+  lab-08-faces
   lab-09
   lab-10
 )
@@ -52,6 +53,8 @@ if(NMPDE_BUILD_LABS AND NMPDE_BUILD_DEALII_LABS)
       add_executable(${lab} "labs/lab-06/poisson-starter.cc")
     elseif(lab STREQUAL "lab-07-adaptivity")
       add_executable(${lab} "labs/lab-07-adaptivity/poisson-starter.cc")
+    elseif(lab STREQUAL "lab-08-faces")
+      add_executable(${lab} "labs/lab-08-faces/poisson-starter.cc")
     else()
       add_executable(${lab} "labs/${lab}/${lab}.cc")
     endif()

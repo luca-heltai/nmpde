@@ -71,5 +71,6 @@
 # Static teaching diagrams for Lecture 8
 !/notes/assets/lecture-08/*.svg
 
-# Static teaching diagram for Laboratory 7
+# Static teaching diagrams for Laboratories 7 and 8
 !/notes/assets/lab-07/hanging-node.svg
+!/notes/assets/lab-08/*.svg

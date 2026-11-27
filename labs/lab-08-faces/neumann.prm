@@ -1,0 +1,16 @@
+subsection Poisson
+  set Initial refinement = 2
+  set Number of cycles = 1
+  set Mixed boundary = true
+  set Exact solution = x*(1+y)
+  set Right hand side = 0
+  set Neumann data = 1+y
+end
+
+subsection Convergence table
+  set Extra columns = cells, dofs
+  set List of error norms to compute = L2_norm, H1_seminorm
+  set Error precision = 6
+  set Rate key =
+  set Rate mode = none
+end
